@@ -30,7 +30,7 @@ namespace Tests {
             int index = 0;
             while (!lex.Eof) {
                 var tok = lex.GetNext();
-                Assert.AreEqual(TokTypes.NUMBER, tok.Type);
+                Assert.AreEqual(TokTypes.Number, tok.Type);
                 Assert.AreEqual(tests[index++], tok.Lexeme);
             }
         }
@@ -49,7 +49,7 @@ namespace Tests {
             var index = 0;
             while (!lex.Eof) {
                 var tok = lex.GetNext();
-                Assert.AreEqual(TokTypes.ATOM, tok.Type);
+                Assert.AreEqual(TokTypes.Atom, tok.Type);
                 Assert.AreEqual(atoms[index++], tok.Lexeme);
             }
         }

@@ -7,7 +7,7 @@ namespace HellHeimRPG {
     };
 
     public class Some <T> : Option <T> {
-        public Some(T _value) { Value = _value; }
+        public Some(T value) { Value = value; }
 
         public T Value { get; private set; }
 

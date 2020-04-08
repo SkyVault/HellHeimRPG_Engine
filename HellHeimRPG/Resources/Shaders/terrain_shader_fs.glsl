@@ -29,5 +29,4 @@ void main() {
 
 	vec3 result = (ambient + rdiffuse + specular) * diffuse;
 	Result = vec4(result, 1.0);
-	Result = vec4(1, 1, 1, 1);
 } 

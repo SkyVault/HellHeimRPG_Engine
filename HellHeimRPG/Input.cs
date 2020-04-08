@@ -1,20 +1,23 @@
-﻿using OpenTK;
-using OpenTK.Input;
-using System;
+﻿using OpenTK.Input;
 using System.Collections.Generic;
-using System.Text;
 
 namespace HellHeimRPG {
-    class Input {
-        private Input() { }
-        private static Input instance = null;
 
-        public static Input It { get {
-            if (instance == null){ instance = new Input(); }
-            return instance;
-        } }
+    internal class Input {
 
-        Dictionary<Key, (bool Now, bool Last)> keyStates = new Dictionary<Key, (bool Last, bool Now)>();
+        private Input() {
+        }
+
+        private static Input _instance = null;
+
+        public static Input It {
+            get {
+                if (_instance == null) { _instance = new Input(); }
+                return _instance;
+            }
+        }
+
+        private Dictionary<Key, (bool Now, bool Last)> _keyStates = new Dictionary<Key, (bool Last, bool Now)>();
 
         public (int, int) MousePosition {
             get {
@@ -27,24 +30,23 @@ namespace HellHeimRPG {
             KeyboardState state = Keyboard.GetState();
             var now = state.IsKeyDown(key);
 
-            if (keyStates.ContainsKey(key)) {
-                keyStates[key] = (now, keyStates[key].Last);
+            if (_keyStates.ContainsKey(key)) {
+                _keyStates[key] = (now, _keyStates[key].Last);
             } else {
-                keyStates[key] = (now, false);
+                _keyStates[key] = (now, false);
             }
 
-            return keyStates[key].Now && !keyStates[key].Last;
+            return _keyStates[key].Now && !_keyStates[key].Last;
         }
 
         public void Update() {
-            Key[] keys = new Key[keyStates.Keys.Count];
-            keyStates.Keys.CopyTo(keys, 0);
+            Key[] keys = new Key[_keyStates.Keys.Count];
+            _keyStates.Keys.CopyTo(keys, 0);
 
             foreach (var key in keys) {
-                var state = keyStates[key];
-                keyStates[key] = (false, state.Now);
+                var state = _keyStates[key];
+                _keyStates[key] = (false, state.Now);
             }
-
         }
 
         public bool Sprint {
@@ -56,28 +58,28 @@ namespace HellHeimRPG {
 
         public bool MoveLeft {
             get {
-                KeyboardState state = Keyboard.GetState(); 
+                KeyboardState state = Keyboard.GetState();
                 return (state.IsKeyDown(Key.A));
             }
         }
 
         public bool MoveForward {
             get {
-                KeyboardState state = Keyboard.GetState(); 
+                KeyboardState state = Keyboard.GetState();
                 return (state.IsKeyDown(Key.W));
             }
         }
 
         public bool MoveBackward {
             get {
-                KeyboardState state = Keyboard.GetState(); 
+                KeyboardState state = Keyboard.GetState();
                 return (state.IsKeyDown(Key.S));
             }
         }
 
         public bool MoveRight {
             get {
-                KeyboardState state = Keyboard.GetState(); 
+                KeyboardState state = Keyboard.GetState();
                 return (state.IsKeyDown(Key.D));
             }
         }

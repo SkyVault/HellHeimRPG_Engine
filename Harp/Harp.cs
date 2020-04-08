@@ -4,38 +4,38 @@ using System.Collections.Generic;
 
 namespace Harp {
     public enum TokTypes {
-        EOF,
-        ATOM,
-        NUMBER,
-        STRING,
-        OPEN_PAREN,
-        CLOSE_PAREN,
-        OPEN_BRACKET,
-        CLOSE_BRACKET,
-        OPEN_BRACE,
-        CLOSE_BRACE,
+        Eof,
+        Atom,
+        Number,
+        String,
+        OpenParen,
+        CloseParen,
+        OpenBracket,
+        CloseBracket,
+        OpenBrace,
+        CloseBrace,
     }
 
     public class Token {
-        public Token(TokTypes _type, string _lexeme) { Type = _type; Lexeme = _lexeme; }
+        public Token(TokTypes type, string lexeme) { Type = type; Lexeme = lexeme; }
         public Token() { }
-        public TokTypes Type { get; set; } = TokTypes.EOF;
+        public TokTypes Type { get; set; } = TokTypes.Eof;
         public string Lexeme { get; set; } = "";
 
         public bool IsTerminal {
             get =>
-                Type == TokTypes.ATOM ||
-                Type == TokTypes.NUMBER ||
-                Type == TokTypes.STRING;
+                Type == TokTypes.Atom ||
+                Type == TokTypes.Number ||
+                Type == TokTypes.String;
         }
     }
 
     public class Lexer {
-        private It<char> it = null;
-        private string source = "";
+        private It<char> _it = null;
+        private string _source = "";
 
-        public char Ch { get => it.Current; }
-        public bool Eof { get => it.Eof; }
+        public char Ch { get => _it.Current; }
+        public bool Eof { get => _it.Eof; }
 
         public Lexer(string code) {
             Load(code);
@@ -48,87 +48,87 @@ namespace Harp {
             char[] chars = code.ToCharArray();
             var list = new List<char>();
             list.AddRange(chars);
-            it = new It<char>(list);
-            source = code;
+            _it = new It<char>(list);
+            _source = code;
         }
 
         public void SkipWhiteSpace() {
-            while (!it.Eof && char.IsWhiteSpace(it.Current))
-                it.Next();
+            while (!_it.Eof && char.IsWhiteSpace(_it.Current))
+                _it.Next();
         }
 
         public Token PeekNext() {
-            var start = it.Ref;
+            var start = _it.Ref;
             var token = GetNext();
-            it = start.Ref;
+            _it = start.Ref;
             return token;
         }
 
-        public Token GetNext() {
-            var result = getNext();
-            return result;
+        public Token GetNext()
+        {
+            return _getNext();
         }
 
-        public Token getNext() { 
+        Token _getNext() { 
             SkipWhiteSpace();
 
             (bool isNeg, bool isDec) flags = (false, false);
 
-            var start = it.Ref;
-            if (Ch == '-') { flags.isNeg = true; it.Next(); }
-            if (it.Eof) return new Token(TokTypes.ATOM, Ch.ToString());
-            if (Ch == '.') { flags.isDec = true; it.Next(); }
-            if (it.Eof) return new Token(TokTypes.ATOM, Ch.ToString());
+            var start = _it.Ref;
+            if (Ch == '-') { flags.isNeg = true; _it.Next(); }
+            if (_it.Eof) return new Token(TokTypes.Atom, Ch.ToString());
+            if (Ch == '.') { flags.isDec = true; _it.Next(); }
+            if (_it.Eof) return new Token(TokTypes.Atom, Ch.ToString());
 
             if (char.IsDigit(Ch)) {
-                while (!it.Eof) {
-                    if (!char.IsDigit(it.Peek(1))) {
+                while (!_it.Eof) {
+                    if (!char.IsDigit(_it.Peek(1))) {
 
-                        if (it.Peek() == '.') {
+                        if (_it.Peek() == '.') {
                             if (!flags.isDec) {
                                 flags.isDec = true;
-                                it.Next();
+                                _it.Next();
                                 continue;
                             }
                         }
 
                         string lexeme = "";
-                        while (start != it) {
+                        while (start != _it) {
                             lexeme += start.Current;
                             start.Next();
                         }
-                        it.Next();
+                        _it.Next();
                         lexeme += start.Current;
-                        return new Token(TokTypes.NUMBER, lexeme);
+                        return new Token(TokTypes.Number, lexeme);
                     }
-                    it.Next();
+                    _it.Next();
                 }
             } else {
-                it = start.Ref;
+                _it = start.Ref;
             }
 
-            if (Ch == '(') { var ch = Ch.ToString(); it.Next(); return new Token(TokTypes.OPEN_PAREN, ch); }
-            if (Ch == ')') { var ch = Ch.ToString(); it.Next(); return new Token(TokTypes.CLOSE_PAREN, ch); }
-            if (Ch == '[') { var ch = Ch.ToString(); it.Next(); return new Token(TokTypes.OPEN_BRACKET, ch); }
-            if (Ch == ']') { var ch = Ch.ToString(); it.Next(); return new Token(TokTypes.CLOSE_BRACKET, ch); }
-            if (Ch == '{') { var ch = Ch.ToString(); it.Next(); return new Token(TokTypes.OPEN_BRACE, ch); }
-            if (Ch == '}') { var ch = Ch.ToString(); it.Next(); return new Token(TokTypes.CLOSE_BRACE, ch); }
+            if (Ch == '(') { var ch = Ch.ToString(); _it.Next(); return new Token(TokTypes.OpenParen, ch); }
+            if (Ch == ')') { var ch = Ch.ToString(); _it.Next(); return new Token(TokTypes.CloseParen, ch); }
+            if (Ch == '[') { var ch = Ch.ToString(); _it.Next(); return new Token(TokTypes.OpenBracket, ch); }
+            if (Ch == ']') { var ch = Ch.ToString(); _it.Next(); return new Token(TokTypes.CloseBracket, ch); }
+            if (Ch == '{') { var ch = Ch.ToString(); _it.Next(); return new Token(TokTypes.OpenBrace, ch); }
+            if (Ch == '}') { var ch = Ch.ToString(); _it.Next(); return new Token(TokTypes.CloseBrace, ch); }
 
-            start = it.Ref;
+            start = _it.Ref;
             while (true) {
-                if (it.Eof
+                if (_it.Eof
                     || char.IsWhiteSpace(Ch)
-                    || "(){}[]',".Contains(it.Current)) {
+                    || "(){}[]',".Contains(_it.Current)) {
                     string lexeme = "";
-                    while (start != it && !start.Eof) {
+                    while (start != _it && !start.Eof) {
                         lexeme += start.Current;
                         start.Next();
                     }
 
-                    return new Token(TokTypes.ATOM, lexeme);
+                    return new Token(TokTypes.Atom, lexeme);
                 }
 
-                it.Next();
+                _it.Next();
             }
         }
     }
@@ -262,19 +262,19 @@ namespace Harp {
             return new None();
         }
 
-        Val parseObject(Lexer lexer) {
+        Val ParseObject(Lexer lexer) {
             var token = lexer.GetNext();
 
-            if (token.Type == TokTypes.ATOM) {
+            if (token.Type == TokTypes.Atom) {
                 return new Atom { Name = token.Lexeme };
             }
 
-            if (token.Type == TokTypes.NUMBER) {
+            if (token.Type == TokTypes.Number) {
                 Assert.IsTrue(double.TryParse(token.Lexeme, out double val));
                 return new Num { Value = val };
             }
 
-            if (token.Type == TokTypes.STRING) {
+            if (token.Type == TokTypes.String) {
                 return new Str { Value = token.Lexeme.Substring(1, token.Lexeme.Length - 2) };
             }
 
@@ -282,23 +282,23 @@ namespace Harp {
             return new None();
         } 
 
-        Val parseList(Lexer lexer) { 
+        Val ParseList(Lexer lexer) { 
             var seq = new Seq();
 
             while (!lexer.Eof) {
                 var token = lexer.PeekNext();
 
-                if (token.Type == TokTypes.OPEN_PAREN) {
-                    seq.Items.Add(parseSExpr(lexer));
+                if (token.Type == TokTypes.OpenParen) {
+                    seq.Items.Add(ParseSExpr(lexer));
                 }
 
                 if (token.IsTerminal) {
                     // NOTE(Dustin): We can improve this by passing the peeked token in
                     // otherwise we are calling PeakNext twice, which inturn calls GetToken
-                    seq.Items.Add(parseSExpr(lexer));
+                    seq.Items.Add(ParseSExpr(lexer));
                 }
 
-                if (token.Type == TokTypes.CLOSE_PAREN) {
+                if (token.Type == TokTypes.CloseParen) {
                     lexer.GetNext();
                     return seq;
                 }
@@ -307,14 +307,14 @@ namespace Harp {
             return seq;
         }
 
-        Val parseSExpr(Lexer lexer) {
+        Val ParseSExpr(Lexer lexer) {
             var token = lexer.PeekNext(); 
 
-            if (token.IsTerminal) { return parseObject(lexer); }
+            if (token.IsTerminal) { return ParseObject(lexer); }
 
-            if (token.Type == TokTypes.OPEN_PAREN) {
+            if (token.Type == TokTypes.OpenParen) {
                 lexer.GetNext();
-                return parseList(lexer);
+                return ParseList(lexer);
             }
 
             Assert.Fail("Unbalanced parenthices");
@@ -327,7 +327,7 @@ namespace Harp {
             var result = new Seq();
 
             while (!lexer.Eof) {
-                result.Items.Add(parseSExpr(lexer));
+                result.Items.Add(ParseSExpr(lexer));
             }
 
             return result;
@@ -348,7 +348,7 @@ namespace Harp {
 
                 if (seq.Items[0] is Atom a) {
                     if (a.Name == "progn") {
-                        return evalProgn(env, args);
+                        return EvalProgn(env, args);
                     }
 
                     if (a.Name == "if") {
@@ -376,11 +376,11 @@ namespace Harp {
 
                         var variable = args.Items[0];
 
-                        if (variable is Atom _atom) {
+                        if (variable is Atom atom) {
                             if (args.Items.Count > 1) {
-                                env.Put(_atom.Name, EvalObject(env, args.Items[1]));
+                                env.Put(atom.Name, EvalObject(env, args.Items[1]));
                             } else {
-                                env.Put(_atom.Name, new None());
+                                env.Put(atom.Name, new None());
                             }
                         } else {
                             Assert.Fail($"def expexts and atom but got {variable.GetType()}");
@@ -416,30 +416,31 @@ namespace Harp {
 
                         var xs = new List<string>();
                         arguments.Items.ForEach(x => xs.Add((x as Atom).Name));
-                        var the_lambda = new Lambda {
+                        var theLambda = new Lambda {
                             Args = xs,
                             Progn = body
                         };
 
-                        env.Put(name.Name, the_lambda);
-                        return the_lambda;
+                        env.Put(name.Name, theLambda);
+                        return theLambda;
                     }
                 }
 
                 Val first = EvalObject(env, seq.Items[0]);
 
                 // Eval
-                if (first is NativeFunc native_func) {
+                if (first is NativeFunc nativeFunc) {
                     env.Push();
-                    var result = native_func.Func(args);
+                    var result = nativeFunc.Func(args);
                     env.Pop();
                     return result;
+                    // ReSharper disable once InconsistentNaming
                 } else if (first is Lambda _lambda) {
                     env.Push();
                     for (int i = 0; i < args.Items.Count; i++) {
                         env.Put(_lambda.Args[i], args.Items[i]);
                     }
-                    var result = evalProgn(env, _lambda.Progn);
+                    var result = EvalProgn(env, _lambda.Progn);
                     env.Pop();
                     return result;
                 } else {
@@ -452,21 +453,21 @@ namespace Harp {
             if (ast is Num num) { return num; }
             if (ast is Str str) { return str; }
 
-            if (ast is Atom atom) { 
-                return env[atom.Name];
+            if (ast is Atom _atom) { 
+                return env[_atom.Name];
             }
 
             return new None();
         }
 
-        Val evalProgn(Env env, Seq ast) {
+        Val EvalProgn(Env env, Seq ast) {
             Val result = new None();
             ast.Items.ForEach(obj => result = EvalObject(env, obj));
             return result;
         }
 
         public Val Eval(Env env, string code) {
-            return evalProgn(env, Parse(code));
+            return EvalProgn(env, Parse(code));
         }
     } 
 } 

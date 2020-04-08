@@ -14,26 +14,26 @@ namespace HellHeimRPG {
 
         public float Sensitivity { get; set; } = 0.002f;
 
-        (int, int) lastMousePos = Input.It.MousePosition;
+        (int, int) _lastMousePos = Input.It.MousePosition;
 
-        float pitch = 0;
-        float yaw = -MathHelper.PiOver2;
+        float _pitch = 0;
+        float _yaw = -MathHelper.PiOver2;
 
-        bool locked = true;
+        bool _locked = true;
 
         public float Pitch {
-            get => MathHelper.RadiansToDegrees(pitch);
+            get => MathHelper.RadiansToDegrees(_pitch);
             set {
                 var angle = MathHelper.Clamp(value, -89f, 89f);
-                pitch = MathHelper.DegreesToRadians(angle);
+                _pitch = MathHelper.DegreesToRadians(angle);
                 UpdateVectors(); 
             }
         }
 
         void UpdateVectors() {
-            Front.X = (float)Math.Cos(pitch) * (float)Math.Cos(yaw);
-            Front.Y = (float)Math.Sin(pitch);
-            Front.Z = (float)Math.Cos(pitch) * (float)Math.Sin(yaw);
+            Front.X = (float)Math.Cos(_pitch) * (float)Math.Cos(_yaw);
+            Front.Y = (float)Math.Sin(_pitch);
+            Front.Z = (float)Math.Cos(_pitch) * (float)Math.Sin(_yaw);
 
             Front = Vector3.Normalize(Front); 
         }
@@ -42,25 +42,25 @@ namespace HellHeimRPG {
             KeyboardState state = Keyboard.GetState();
             if (Input.It.IsKeyPressed(Key.Tab)) {
                 Console.WriteLine("HELLO");
-                locked = !locked;
+                _locked = !_locked;
             }
 
-            if (!locked) return;
+            if (!_locked) return;
 
             var mouse = Input.It.MousePosition;
 
-            float delta_x = mouse.Item1 - lastMousePos.Item1;
-            float delta_y = mouse.Item2 - lastMousePos.Item2;
+            float deltaX = mouse.Item1 - _lastMousePos.Item1;
+            float deltaY = mouse.Item2 - _lastMousePos.Item2;
 
-            yaw += delta_x * Sensitivity;
-            pitch -= delta_y * Sensitivity;
+            _yaw += deltaX * Sensitivity;
+            _pitch -= deltaY * Sensitivity;
 
             Pitch = Math.Clamp(Pitch, -89.0f, 89.0f);
 
             UpdateVectors(); 
 
             Mouse.SetPosition(Game.WindowSize.Item1 / 2, Game.WindowSize.Item2 / 2);
-            lastMousePos = Input.It.MousePosition;
+            _lastMousePos = Input.It.MousePosition;
 
             float speed = 0.0016f * 10.0f;
 

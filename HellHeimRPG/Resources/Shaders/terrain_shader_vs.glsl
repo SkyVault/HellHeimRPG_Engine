@@ -2,7 +2,6 @@
 
 layout (location = 0) in vec3 iVertex;
 layout (location = 1) in vec3 iNormal;
-layout (location = 2) in vec2 iUvs;
 
 out vec3 FragPos;
 out vec3 Normal;

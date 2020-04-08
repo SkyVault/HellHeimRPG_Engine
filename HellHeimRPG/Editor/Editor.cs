@@ -45,11 +45,11 @@ namespace HellHeimRPG.Editor {
                 ImGui.PushID(entity.Id.Index);
                 ImGui.AlignTextToFramePadding();
 
-                bool node_open = ImGui.TreeNode(
+                bool nodeOpen = ImGui.TreeNode(
                     $"<entity:{entity.Tag}>"
                 );
 
-                if (node_open) {
+                if (nodeOpen) {
                     int i = 0;
                     foreach (var key in components.Keys) { 
                         ImGui.PushID(i);

@@ -6,31 +6,27 @@ using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace HellHeimRPG {
-    class EntId { public int Index; }
+    public class EntId { public int Index; }
 
-    class Ent {
-
+    public class Ent { 
         public bool Active { get; set; } = false;
         public EntId Id { get; set; } = new EntId { Index = -1 };
 
-        string tag = $"entity";
-        public string Tag { get => tag; set => tag = value; }
+        public string Tag { get; set; } = $"entity";
 
-        Dictionary<Type, object> components = new Dictionary<Type, object>();
-
-        public Dictionary<Type, object> Components { get => components; }
+        public Dictionary<Type, object> Components { get; } = new Dictionary<Type, object>();
 
         public T Add<T> (T component) {
-            components[typeof(T)] = component;
+            Components[typeof(T)] = component;
             return component;
         }
 
-        public T Get<T>() => (T)components[typeof(T)];
+        public T Get<T>() => (T)Components[typeof(T)];
 
-        public T Get<T>(Type t) => (T)components[t];
+        public T Get<T>(Type t) => (T)Components[t];
 
-        public bool Has<T>() => components.ContainsKey(typeof(T));
-        public bool Has(Type t) => components.ContainsKey(t);
+        public bool Has<T>() => Components.ContainsKey(typeof(T));
+        public bool Has(Type t) => Components.ContainsKey(t);
 
         public bool Match(params Type[] match) { 
             foreach (var t in match) {
@@ -49,20 +45,20 @@ namespace HellHeimRPG {
 
     class Ecs {
         private Ecs() { } 
-        private static Ecs instance = null;
+        private static Ecs _instance = null;
 
         public static Ecs It {
             get {
-                if (instance is null) { instance = new Ecs(); }
-                return instance;
+                if (_instance is null) { _instance = new Ecs(); }
+                return _instance;
             }
         }
 
-        List<Ent> entities = new List<Ent>(1000);
-        List<Filter> filters = new List<Filter>();
+        List<Ent> _entities = new List<Ent>(1000);
+        List<Filter> _filters = new List<Filter>();
 
         public Ent Get(EntId id) {
-            return entities[id.Index];
+            return _entities[id.Index];
         }
 
         public Option<Ent> FirstWith(params Type[] match) {
@@ -71,12 +67,12 @@ namespace HellHeimRPG {
         }
 
         public IEnumerable<Ent> Each() {
-            foreach (var ent in entities)
+            foreach (var ent in _entities)
                 yield return ent;
         }
 
         public IEnumerable<Ent> Each(params Type[] match) {
-            foreach(var ent in entities) {
+            foreach(var ent in _entities) {
                 if (!ent.Active) continue; 
                 if (ent.Match(match)) yield return ent; 
             } 
@@ -84,37 +80,37 @@ namespace HellHeimRPG {
 
         public T Register<T> () where T : Filter, new() {
             var t = new T();
-            filters.Add(t);
+            _filters.Add(t);
             return t;
         }
 
         public Ent Create() {
             int index = -1;
-            for (int i = 0; i < entities.Count; i++) {
-                if (!entities[i].Active) { index = i; break; }
+            for (int i = 0; i < _entities.Count; i++) {
+                if (!_entities[i].Active) { index = i; break; }
             } 
 
             if (index < 0) {
-                index = entities.Count;
+                index = _entities.Count;
                 var ent = new Ent() { 
                     Active = true,
                     Id = new EntId { Index = index }
                 };
-                entities.Add(ent);
+                _entities.Add(ent);
                 return ent;
             } else {
-                entities[index].Active = true;
-                entities[index].Id.Index = index;
-                return entities[index];
+                _entities[index].Active = true;
+                _entities[index].Id.Index = index;
+                return _entities[index];
             }
         }
 
         public void Update() {
-            filters.ForEach(f => f.Update());
+            _filters.ForEach(f => f.Update());
         }
 
         public void Render() {
-            filters.ForEach(f => f.Render()); 
+            _filters.ForEach(f => f.Render()); 
         }
     }
 }

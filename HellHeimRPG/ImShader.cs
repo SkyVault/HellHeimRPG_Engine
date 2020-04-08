@@ -25,19 +25,19 @@ namespace Dear_ImGui_Sample
     {
         public readonly string Name;
         public int Program { get; private set; }
-        private readonly Dictionary<string, int> UniformToLocation = new Dictionary<string, int>();
-        private bool Initialized = false;
+        private readonly Dictionary<string, int> _uniformToLocation = new Dictionary<string, int>();
+        private bool _initialized = false;
 
-        private (ShaderType Type, string Path)[] Files;
+        private (ShaderType Type, string Path)[] _files;
 
         public Shader(string name, string vertexShader, string fragmentShader)
         {
             Name = name;
-            Files = new[]{
+            _files = new[]{
                 (ShaderType.VertexShader, vertexShader),
                 (ShaderType.FragmentShader, fragmentShader),
             };
-            Program = CreateProgram(name, Files);
+            Program = CreateProgram(name, _files);
         }
         public void UseShader()
         {
@@ -46,42 +46,42 @@ namespace Dear_ImGui_Sample
 
         public void Dispose()
         {
-            if (Initialized)
+            if (_initialized)
             {
                 GL.DeleteProgram(Program);
-                Initialized = false;
+                _initialized = false;
             }
         }
 
         public UniformFieldInfo[] GetUniforms()
         {
-            GL.GetProgram(Program, GetProgramParameterName.ActiveUniforms, out int UnifromCount);
+            GL.GetProgram(Program, GetProgramParameterName.ActiveUniforms, out int unifromCount);
 
-            UniformFieldInfo[] Uniforms = new UniformFieldInfo[UnifromCount];
+            UniformFieldInfo[] uniforms = new UniformFieldInfo[unifromCount];
 
-            for (int i = 0; i < UnifromCount; i++)
+            for (int i = 0; i < unifromCount; i++)
             {
-                string Name = GL.GetActiveUniform(Program, i, out int Size, out ActiveUniformType Type);
+                string name = GL.GetActiveUniform(Program, i, out int size, out ActiveUniformType type);
 
-                UniformFieldInfo FieldInfo;
-                FieldInfo.Location = GetUniformLocation(Name);
-                FieldInfo.Name = Name;
-                FieldInfo.Size = Size;
-                FieldInfo.Type = Type;
+                UniformFieldInfo fieldInfo;
+                fieldInfo.Location = GetUniformLocation(name);
+                fieldInfo.Name = name;
+                fieldInfo.Size = size;
+                fieldInfo.Type = type;
 
-                Uniforms[i] = FieldInfo;
+                uniforms[i] = fieldInfo;
             }
 
-            return Uniforms;
+            return uniforms;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetUniformLocation(string uniform)
         {
-            if (UniformToLocation.TryGetValue(uniform, out int location) == false)
+            if (_uniformToLocation.TryGetValue(uniform, out int location) == false)
             {
                 location = GL.GetUniformLocation(Program, uniform);
-                UniformToLocation.Add(uniform, location);
+                _uniformToLocation.Add(uniform, location);
 
                 if (location == -1)
                 {
@@ -94,51 +94,51 @@ namespace Dear_ImGui_Sample
 
         private int CreateProgram(string name, params (ShaderType Type, string source)[] shaderPaths)
         {
-            Util.CreateProgram(name, out int Program);
+            Util.CreateProgram(name, out int program);
 
-            int[] Shaders = new int[shaderPaths.Length];
+            int[] shaders = new int[shaderPaths.Length];
             for (int i = 0; i < shaderPaths.Length; i++)
             {
-                Shaders[i] = CompileShader(name, shaderPaths[i].Type, shaderPaths[i].source);
+                shaders[i] = CompileShader(name, shaderPaths[i].Type, shaderPaths[i].source);
             }
 
-            foreach (var shader in Shaders)
-                GL.AttachShader(Program, shader);
+            foreach (var shader in shaders)
+                GL.AttachShader(program, shader);
 
-            GL.LinkProgram(Program);
+            GL.LinkProgram(program);
 
-            GL.GetProgram(Program, GetProgramParameterName.LinkStatus, out int Success);
-            if (Success == 0)
+            GL.GetProgram(program, GetProgramParameterName.LinkStatus, out int success);
+            if (success == 0)
             {
-                string Info = GL.GetProgramInfoLog(Program);
-                Debug.WriteLine($"GL.LinkProgram had info log [{name}]:\n{Info}");
+                string info = GL.GetProgramInfoLog(program);
+                Debug.WriteLine($"GL.LinkProgram had info log [{name}]:\n{info}");
             }
 
-            foreach (var Shader in Shaders)
+            foreach (var shader in shaders)
             {
-                GL.DetachShader(Program, Shader);
-                GL.DeleteShader(Shader);
+                GL.DetachShader(program, shader);
+                GL.DeleteShader(shader);
             }
 
-            Initialized = true;
+            _initialized = true;
 
-            return Program;
+            return program;
         }
 
         private int CompileShader(string name, ShaderType type, string source)
         {
-            Util.CreateShader(type, name, out int Shader);
-            GL.ShaderSource(Shader, source);
-            GL.CompileShader(Shader);
+            Util.CreateShader(type, name, out int shader);
+            GL.ShaderSource(shader, source);
+            GL.CompileShader(shader);
 
-            GL.GetShader(Shader, ShaderParameter.CompileStatus, out int success);
+            GL.GetShader(shader, ShaderParameter.CompileStatus, out int success);
             if (success == 0)
             {
-                string Info = GL.GetShaderInfoLog(Shader);
-                Debug.WriteLine($"GL.CompileShader for shader '{Name}' [{type}] had info log:\n{Info}");
+                string info = GL.GetShaderInfoLog(shader);
+                Debug.WriteLine($"GL.CompileShader for shader '{Name}' [{type}] had info log:\n{info}");
             }
             
-            return Shader;
+            return shader;
         }
     }
 }

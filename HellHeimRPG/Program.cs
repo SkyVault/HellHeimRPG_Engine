@@ -39,7 +39,7 @@ namespace HellHeimRPG {
                 };
 
                 win.RenderFrame += (sender, e) => { 
-                    GL.ClearColor(new Color4(0, 0, 0, 255));
+                    GL.ClearColor(new Color4(0, 40, 40, 255));
                     GL.Clear(ClearBufferMask.ColorBufferBit |
                              ClearBufferMask.DepthBufferBit |
                              ClearBufferMask.StencilBufferBit);

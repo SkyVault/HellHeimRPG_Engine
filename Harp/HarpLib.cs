@@ -7,7 +7,7 @@ namespace Harp {
     public static class Lib {
         public static void LoadHarpLibInto(this Harp harp, Env env){ 
             //monoid
-            Val reduce(Func<Num, Num, Num> op, Seq args, double initial = 0.0f) {
+            Val Reduce(Func<Num, Num, Num> op, Seq args, double initial = 0.0f) {
                 var result = new Num { Value = initial };
 
                 for (int i = 0; i < args.Items.Count; i++) {
@@ -41,19 +41,19 @@ namespace Harp {
             }
             
             env.Vars[0]["+"] = new NativeFunc { Func = (args) => {
-                return reduce((a, b) => new Num { Value = a.Value + b.Value }, args);
+                return Reduce((a, b) => new Num { Value = a.Value + b.Value }, args);
             }};
 
             env.Vars[0]["-"] = new NativeFunc { Func = (args) => {
                 var first = args.Items[0] as Num;
                 args.Items.RemoveAt(0);
-                return reduce(
+                return Reduce(
                     (a, b) => new Num { Value = a.Value - b.Value },
                     args, first.Value);
             }}; 
             
             env.Vars[0]["*"] = new NativeFunc { Func = (args) => {
-                return reduce((a, b) => new Num { Value = a.Value * b.Value }, args, 1.0f);
+                return Reduce((a, b) => new Num { Value = a.Value * b.Value }, args, 1.0f);
             }};
 
             env.Vars[0]["/"] = new NativeFunc { Func = (args) => {

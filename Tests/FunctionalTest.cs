@@ -10,23 +10,23 @@ namespace Tests {
     class FunctionalTest { 
         [TestMethod]
         public void OptionTest() {
-            var num_o = new Some<int>(32);
+            var numO = new Some<int>(32);
             var worked = false;
 
-            Assert.AreEqual(32, num_o.Map((n) => {
+            Assert.AreEqual(32, numO.Map((n) => {
                 worked = true;
                 return n;
             }));
 
             Assert.IsTrue(worked);
 
-            var num_none = new None<int>();
+            var numNone = new None<int>();
 
-            Option<string> test() {
+            Option<string> Test() {
                 return new Some<string>("Hello World");
             }
 
-            var myO = test();
+            var myO = Test();
 
             Assert.IsTrue(myO is Some<string> o);
         }
