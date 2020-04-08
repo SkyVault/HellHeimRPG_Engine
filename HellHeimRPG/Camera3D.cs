@@ -7,7 +7,7 @@ using System.Text;
 namespace HellHeimRPG {
     class Camera3D {
         public Quaternion Orientation = Quaternion.Identity;
-        public Vector3 Translation = Vector3.Zero;
+        public Vector3 Translation = new Vector3(0, 0, 10);
 
         public Vector3 Front = new Vector3(0, 0, -1);
         public Vector3 Up { get => new Vector3(0, 1, 0); }

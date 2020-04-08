@@ -5,6 +5,7 @@ using HellHeimRPG.Components;
 using HellHeimRPG.Filters;
 using OpenTK;
 using OpenTK.Graphics.OpenGL4;
+using BulletSharp;
 
 namespace HellHeimRPG {
     public class Clock {
@@ -34,9 +35,14 @@ namespace HellHeimRPG {
         static List<Level> _levels = new List<Level>(); 
         public static Level CurrentLevel { get => _levels[0]; }
 
-        public Clock Clock { get; } = new Clock();
+        public static Clock Clock { get; } = new Clock();
 
-        public void Load() {
+        public static Physics Physics { get; protected set; }
+
+        public void Load() { 
+            // Init physics
+            Physics = new Physics();
+
             Functional.Test.greetFromFS("Dustin"); 
 
             _levels.Add(new Level());
@@ -54,29 +60,38 @@ namespace HellHeimRPG {
             //model.Material.Texture = texture;
 
             terr.Material.Texture = texture;
+            cubem.Material.Texture = texture;
 
             var monkey = Ecs.It.Create();
             monkey.Tag = "monkey";
             monkey.Add(model);
-            monkey.Add(new Body() { 
+            monkey.Add(new Transform() { 
                 Translation = new Vector3(0, 0, -4),
                 Scale = new Vector3(1.0f, 1.0f, 1.0f),
             });
 
             var terrain = Ecs.It.Create();
             terrain.Tag = "terrain";
-            terrain.Add(new Body() { Translation = new Vector3(-1, -0.2f, -3) });
+            terrain.Add(new Transform() { Translation = new Vector3(-1, -0.2f, -3) });
             terrain.Add(terr);
 
             var cube = Ecs.It.Create();
             cube.Tag = "cube";
-            cube.Add(new Body() { Translation = new Vector3(0.0f, 0.0f, -2.0f),
+            cube.Add(new Transform() { Translation = new Vector3(0.0f, 0.0f, -2.0f),
                                   Scale = new Vector3(0.2f, 0.2f, 0.2f) });
             cube.Add(cubem);
+            cube.Add(
+                Physics.CreateRidgedBody(10, Matrix4.Identity, 
+                    Physics.AddBoxShape(new BulletSharp.Math.Vector3(1, 1, 1)))
+            );
+
+            cube.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, 20, 0));
         }
 
         public void Tick(double delta) { 
             Clock.Update((float)delta);
+
+            Physics.Update();
 
             Input.It.Update();
 

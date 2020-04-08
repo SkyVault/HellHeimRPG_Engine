@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-
+using BulletSharp;
 using OpenTK.Graphics.OpenGL4;
 
 namespace HellHeimRPG.Filters {
@@ -46,11 +46,11 @@ namespace HellHeimRPG.Filters {
                 _shader.SetUniform(_shader.GetLoc("projection"), proj);
                 _shader.SetUniform(_shader.GetLoc("view"), Game.Camera.ViewMatrix);
 
-                foreach(var ent in Ecs.It.Each(typeof(Body), typeof(Terrain))) {
-                    var body = ent.Get<Body>();
+                foreach(var ent in Ecs.It.Each(typeof(Transform), typeof(Terrain))) {
+                    var body = ent.Get<Transform>();
                     var terrain = ent.Get<Terrain>();
 
-                    _shader.SetUniform(_shader.GetLoc("model"), body.Transform);
+                    _shader.SetUniform(_shader.GetLoc("model"), body.Matrix);
 
                     terrain.Render();
                 } 
@@ -68,11 +68,17 @@ namespace HellHeimRPG.Filters {
                 _shader.SetUniform(_shader.GetLoc("lightPos"), 0.5f, 0, 1.0f);
                 _shader.SetUniform(_shader.GetLoc("view"), Game.Camera.ViewMatrix);
 
-                foreach(var ent in Ecs.It.Each(typeof(Body), typeof(Model))) {
-                    var body = ent.Get<Body>();
+                foreach(var ent in Ecs.It.Each(typeof(Transform), typeof(Model))) {
+                    var body = ent.Get<Transform>();
                     var model = ent.Get<Model>();
 
-                    _shader.SetUniform(_shader.GetLoc("model"), body.Transform); 
+                    var matrix = body.Matrix;
+
+                    if (ent.Has<RigidBody>()) {
+                        matrix = Game.Physics.Convert(ent.Get<RigidBody>().WorldTransform);
+                    }
+
+                    _shader.SetUniform(_shader.GetLoc("model"), matrix); 
 
                     if (model.Material.HasTexture) {
                         GL.BindTexture(TextureTarget.Texture2D, model.Material.Texture.Id);
