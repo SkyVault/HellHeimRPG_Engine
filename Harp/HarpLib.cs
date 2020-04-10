@@ -5,7 +5,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Harp {
     public static class Lib {
-        public static void LoadHarpLibInto(this Harp harp, Env env){ 
+        public static void LoadHarpLibInto(this Harp harp, Env env){
+            void error(string msg) {
+
+            }
+
             //monoid
             Val Reduce(Func<Num, Num, Num> op, Seq args, double initial = 0.0f) {
                 var result = new Num { Value = initial };
@@ -41,23 +45,14 @@ namespace Harp {
             }
             
             env.Vars[0]["+"] = new NativeFunc { Func = (args) => {
-                return Reduce((a, b) => new Num { Value = a.Value + b.Value }, args);
-            }};
-
-            env.Vars[0]["-"] = new NativeFunc { Func = (args) => {
-                var first = args.Items[0] as Num;
-                args.Items.RemoveAt(0);
-                return Reduce(
-                    (a, b) => new Num { Value = a.Value - b.Value },
-                    args, first.Value);
-            }}; 
-            
-            env.Vars[0]["*"] = new NativeFunc { Func = (args) => {
-                return Reduce((a, b) => new Num { Value = a.Value * b.Value }, args, 1.0f);
-            }};
-
-            env.Vars[0]["/"] = new NativeFunc { Func = (args) => {
-                return new Num { Value = 3 };
+                Num result = new Num() {Value = 0}; 
+                foreach (Val arg in args) {
+                    var value = harp.EvalObject(env, arg); 
+                    while (!value.IsValue) value = harp.EvalObject(env, value); 
+                    if (value is Num num) { result.Value += num.Value; }
+                    else { Assert.Fail("TODO: Handle other types"); }
+                } 
+                return result;
             }};
 
             env.Vars[0]["eq?"] = new NativeFunc {
@@ -103,6 +98,43 @@ namespace Harp {
                         Console.WriteLine($"{harp.EvalObject(env, i)} ");
                     });
                     return args;
+                }
+            };
+
+            env.Vars[0]["v-push"] = new NativeFunc {
+                Func = (args) => {
+                    if (args.Items.Count < 2) { Console.WriteLine($"v-push expects at least 2 arguments"); }
+                    if (harp.EvalObject(env, args.Items[0]) is Vec v) {
+                        for (int i = 1; i < args.Items.Count; i++) { 
+                            var value = harp.EvalObject(env, args.Items[i]); 
+                            while (!value.IsValue) value = harp.EvalObject(env, value); 
+                            v.Items.Add(value);
+                        } 
+                        return v;
+                    }
+                    else {
+                        Console.WriteLine($"v-push expects the first argument to be a vec but its: {args.Items[0]}");
+                        return new None();
+                    }
+                }
+            };
+
+            env.Vars[0]["v-get"] = new NativeFunc {
+                Func = (args) => {
+                    if (args.Items.Count < 2) { Console.WriteLine($"v-get expects at least 2 arguments"); }
+
+                    if (harp.EvalObject(env, args.Items[0]) is Vec v) {
+                        if (harp.EvalObject(env, args.Items[1]) is Num num) {
+                            int index = (int) Math.Floor(num.Value);
+                            return v.Items[index];
+                        } else {
+                            Console.WriteLine($"v-get: second argument should be an integer but is {args.Items[1]} ");
+                            return new None();
+                        }
+                    } else {
+                        Console.WriteLine($"v-get expects the first argument to be a vec but its: {args.Items[0]}");
+                        return new None();
+                    } 
                 }
             };
         }

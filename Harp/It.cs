@@ -13,7 +13,15 @@ namespace Harp {
             this._ts = ts;
         }
 
-        public T Current { get => _ts[_index]; }
+        public T Current
+        {
+            get
+            {
+                if (Eof) return default;
+                return _ts[_index]; 
+            }
+        }
+
         public bool Eof { get => !(_index < _ts.Count); }
 
         public bool Next() {
