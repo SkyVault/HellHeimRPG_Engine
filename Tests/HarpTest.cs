@@ -88,7 +88,7 @@ namespace Tests {
 
             harp.LoadHarpLibInto(env);
             var t = harp.Eval(env, "(defn add (a b) (+ a b))");
-            var a = harp.Eval(env, "(add (add 1 2) 3)");
+            var a = harp.Eval(env, "(add (add a) 3)");
             Assert.Fail($"{a}");
         }
     }

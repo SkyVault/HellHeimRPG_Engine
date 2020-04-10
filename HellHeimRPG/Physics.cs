@@ -28,8 +28,8 @@ namespace HellHeimRPG {
             World = new DiscreteDynamicsWorld(collisionDispatcher, broadphase, null, collisionConfiguration); 
             World.Gravity = Gravity;
 
-            // Test ground
-            var ground = CreateRidgedBody(0, Matrix4.Identity, AddBoxShape(new Vector3(100, 1, 100)));
+            //// Test ground
+            //var ground = CreateRidgedBody(0, Matrix4.Identity, AddBoxShape(new Vector3(100, 1, 100)));
         }
 
         public BulletSharp.Math.Vector4 Convert(OpenTK.Vector4 v) {
@@ -86,6 +86,12 @@ namespace HellHeimRPG {
             var shape = new BoxShape(bounds.X, bounds.Y, bounds.Z);
             collisionShapes.Add(shape);
             return shape;
+        }
+
+        public CollisionShape AddStaticMeshShape(Mesh mesh, Matrix4 transform)
+        {
+
+            return null;
         }
 
         public void Update()

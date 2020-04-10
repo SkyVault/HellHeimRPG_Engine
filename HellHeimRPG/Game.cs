@@ -73,7 +73,8 @@ namespace HellHeimRPG {
             var terrain = Ecs.It.Create();
             terrain.Tag = "terrain";
             terrain.Add(new Transform() { Translation = new Vector3(-1, -0.2f, -3) });
-            terrain.Add(terr);
+            terrain.Add(terr); 
+            terrain.Add(Physics.AddStaticMeshShape(terr.Mesh, terrain.Get<Transform>().Matrix));
 
             var cube = Ecs.It.Create();
             cube.Tag = "cube";

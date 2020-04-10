@@ -13,6 +13,7 @@ namespace HellHeimRPG
         int _vbo = 0;
         int _nbo = 0;
         int _tbo = 0;
+        int _ibo = 0;
 
         public Model() { }
 
@@ -28,6 +29,7 @@ namespace HellHeimRPG
                 _vbo = GL.GenBuffer();
                 _nbo = GL.GenBuffer();
                 _tbo = GL.GenBuffer();
+                _ibo = GL.GenBuffer();
 
                 Art.It.BindBuffer(_vbo, () => { 
                     GL.BufferData(BufferTarget.ArrayBuffer,
@@ -38,6 +40,13 @@ namespace HellHeimRPG
                     GL.EnableVertexAttribArray(0);
                     GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0); 
                 });
+
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ibo);
+                GL.BufferData(BufferTarget.ArrayBuffer,
+                    _mesh.Indices.Length * sizeof(uint),
+                    _mesh.Indices,
+                    BufferUsageHint.StaticDraw);
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
 
                 Art.It.BindBuffer(_nbo, () => {
                     GL.BufferData(BufferTarget.ArrayBuffer,
@@ -72,6 +81,12 @@ namespace HellHeimRPG
         }
 
         public void Bind(Action fn)
-            => Art.It.BindVao(_vao, fn);
+        {
+            GL.BindVertexArray(_vao);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ibo);
+            fn();
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
+            GL.BindVertexArray(0);
+        }
     }
 }

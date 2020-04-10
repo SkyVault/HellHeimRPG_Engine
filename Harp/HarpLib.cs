@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.VisualBasic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Harp {
@@ -10,46 +11,32 @@ namespace Harp {
 
             }
 
-            //monoid
-            Val Reduce(Func<Num, Num, Num> op, Seq args, double initial = 0.0f) {
-                var result = new Num { Value = initial };
-
-                for (int i = 0; i < args.Items.Count; i++) {
-                    var seq = harp.EvalObject(env, args.Items[i]);
-
-                    if (seq.IsValue) {
-                        if (seq is Num n) {
-                            result = op(result, n);
-                        } else {
-                            Console.WriteLine($"Binary operator requires numbers not {seq.GetType()}");
-                            return new None();
-                        }
-                    } else {
-                        var seq2 = harp.EvalObject(env, seq);
-                        if (seq2.IsValue) {
-                            if (seq2 is Num n) {
-                                result = op(result, n);
-                            } else {
-                                Console.WriteLine($"Binary operator requires numbers not {seq2.GetType()}");
-                                return new None();
-                            }
-                        } else {
-                            Assert.Fail("Never should've made it here");
-                        }
-                    }
-
-
+            void proto(Seq args, string fn_name, params Type[] types) {
+                if (args.Items.Count < types.Length) {
+                    Console.WriteLine(
+                        $"Function: {fn_name} requires at least {types.Length} arguments, but got {args.Items.Count}");
                 }
-
-                return new None();
             }
+
+            Val getTerminal(Val arg) { 
+                var value = harp.EvalObject(env, arg); 
+                while (!value.IsValue) value = harp.EvalObject(env, value);
+                return value;
+            } 
             
             env.Vars[0]["+"] = new NativeFunc { Func = (args) => {
                 Num result = new Num() {Value = 0}; 
                 foreach (Val arg in args) {
-                    var value = harp.EvalObject(env, arg); 
-                    while (!value.IsValue) value = harp.EvalObject(env, value); 
-                    if (value is Num num) { result.Value += num.Value; }
+                    if (getTerminal(arg) is Num num) { result.Value += num.Value; }
+                    else { Assert.Fail("TODO: Handle other types"); }
+                } 
+                return result;
+            }}; 
+            
+            env.Vars[0]["-"] = new NativeFunc { Func = (args) => {
+                Num result = new Num() {Value = (getTerminal(args[0]) as Num).Value}; 
+                for(int i = 1; i < args.Items.Count; i++) {
+                    if (getTerminal(args[i]) is Num num) { result.Value -= num.Value; }
                     else { Assert.Fail("TODO: Handle other types"); }
                 } 
                 return result;
@@ -70,6 +57,38 @@ namespace Harp {
                 }
             };
 
+            env.Vars[0]["<"] = new NativeFunc() { Func = (args) => {
+                if (args.Items.Count < 2) { Console.WriteLine("< function requires 2 arguments"); return Bool.False; } 
+                if (getTerminal(args[0]) is Num an && getTerminal(args[1]) is Num bn)
+                    return new Bool {Flag = an.Value < bn.Value}; 
+                Console.WriteLine("< function requires all of its arguments to be numbers");
+                return Bool.False;
+            }};
+
+            env.Vars[0][">"] = new NativeFunc() { Func = (args) => {
+                if (args.Items.Count < 2) { Console.WriteLine("< function requires 2 arguments"); return Bool.False; } 
+                if (getTerminal(args[0]) is Num an && getTerminal(args[1]) is Num bn)
+                    return new Bool {Flag = an.Value > bn.Value}; 
+                Console.WriteLine("> function requires all of its arguments to be numbers");
+                return Bool.False;
+            }};
+
+            env.Vars[0]["<="] = new NativeFunc() { Func = (args) => {
+                if (args.Items.Count < 2) { Console.WriteLine("< function requires 2 arguments"); return Bool.False; } 
+                if (getTerminal(args[0]) is Num an && getTerminal(args[1]) is Num bn)
+                    return new Bool {Flag = an.Value <= bn.Value}; 
+                Console.WriteLine("<= function requires all of its arguments to be numbers");
+                return Bool.False;
+            }};
+
+            env.Vars[0][">="] = new NativeFunc() { Func = (args) => {
+                if (args.Items.Count < 2) { Console.WriteLine("< function requires 2 arguments"); return Bool.False; } 
+                if (getTerminal(args[0]) is Num an && getTerminal(args[1]) is Num bn)
+                    return new Bool {Flag = an.Value >= bn.Value}; 
+                Console.WriteLine(">= function requires all of its arguments to be numbers");
+                return Bool.False;
+            }};
+ 
             env.Vars[0]["neq?"] = new NativeFunc { 
                 Func = (args) => {
                     if (args.Items.Count < 2) {
@@ -101,8 +120,21 @@ namespace Harp {
                 }
             };
 
+            env.Vars[0]["read"] = new NativeFunc {
+                Func = (args) => {
+                    var input = Console.ReadLine();
+                    if (double.TryParse(input, out double n)) {
+                        return new Num() {Value = n};
+                    } else {
+                        return new Str() {Value = input};
+                    }
+                }
+            };
+
             env.Vars[0]["v-push"] = new NativeFunc {
                 Func = (args) => {
+                    proto(args, "v-push", typeof(Vec), typeof(Val));
+
                     if (args.Items.Count < 2) { Console.WriteLine($"v-push expects at least 2 arguments"); }
                     if (harp.EvalObject(env, args.Items[0]) is Vec v) {
                         for (int i = 1; i < args.Items.Count; i++) { 
@@ -135,6 +167,40 @@ namespace Harp {
                         Console.WriteLine($"v-get expects the first argument to be a vec but its: {args.Items[0]}");
                         return new None();
                     } 
+                }
+            };
+
+            env.Vars[0]["inc"] = new NativeFunc {
+                Func = (args) => {
+                    if (args.Items.Count < 1) {
+                        Console.WriteLine("Inc requires at least 1 argument.");
+                        return new None();
+                    }
+
+                    if (harp.EvalObject(env, args.Items[0]) is Num num) {
+                        num.Value += 1;
+                        return num;
+                    } else {
+                        Console.WriteLine("Inc requires a number");
+                        return new None();
+                    }
+                }
+            };
+
+            env.Vars[0]["dec"] = new NativeFunc {
+                Func = (args) => {
+                    if (args.Items.Count < 1) {
+                        Console.WriteLine("Inc requires at least 1 argument.");
+                        return new None();
+                    }
+
+                    if (harp.EvalObject(env, args.Items[0]) is Num num) {
+                        num.Value -= 1;
+                        return num;
+                    } else {
+                        Console.WriteLine("Inc requires a number");
+                        return new None();
+                    }
                 }
             };
         }

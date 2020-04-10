@@ -3,6 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.Runtime.CompilerServices;
 using Harp;
 
 namespace Harp {
@@ -181,7 +183,7 @@ namespace Harp {
             return false;
         }
 
-        public bool IsValue => this is Num || this is Str || this is Bool || this is Atom;
+        public bool IsValue => this is Num || this is Str || this is Bool;
 
         public override int GetHashCode() {
             return base.GetHashCode();
@@ -246,6 +248,8 @@ namespace Harp {
     public class Seq : Val, IEnumerable { 
         public List<Val> Items { get; set; } = new List<Val>();
         public IEnumerator GetEnumerator() => Items.GetEnumerator();
+
+        public Val this[int index] => Items[index];
     }
 
     public class Vec : Val, IEnumerable {
@@ -501,7 +505,12 @@ namespace Harp {
                     }
 
                     if (a.Name == "lambda") {
-                        var xs = args.Items[0] as Seq;
+                        if (!(args.Items[0] is Vec)) {
+                            Console.WriteLine("Lambda definition requires a vector for its arguments");
+                            return new None();
+                        }
+
+                        var xs = args.Items[0] as Vec;
 
                         var body = new Seq();
                         for (int i = 1; i < args.Items.Count; i++) {
@@ -510,6 +519,7 @@ namespace Harp {
 
                         var xss = new List<string>();
                         xs.Items.ForEach(x => xss.Add((x as Atom).Name));
+
                         return new Lambda {
                             Args = xss,
                             Progn = body
@@ -517,9 +527,15 @@ namespace Harp {
                     }
 
                     if (a.Name == "defn") {
-                        Assert.IsTrue(args.Items.Count == 3);
+                        Assert.IsTrue(args.Items.Count >= 3);
                         var name = args.Items[0] as Atom;
-                        var arguments = args.Items[1] as Seq;
+
+                        if (!(args.Items[1] is Vec)) {
+                            Console.WriteLine("Lambda definition requires a vector for its arguments");
+                            return new None(); 
+                        }
+
+                        var arguments = args.Items[1] as Vec;
 
                         var body = new Seq();
                         for (int i = 2; i < args.Items.Count; i++)
@@ -545,11 +561,11 @@ namespace Harp {
                     var result = nativeFunc.Func(args);
                     env.Pop();
                     return result;
-                    // ReSharper disable once InconsistentNaming
                 } else if (first is Lambda _lambda) {
                     env.Push();
                     for (int i = 0; i < args.Items.Count; i++) {
-                        env.Put(_lambda.Args[i], args.Items[i]);
+                        env.Put(_lambda.Args[i], 
+                            EvalObject(env, args.Items[i]));
                     }
                     var result = EvalProgn(env, _lambda.Progn);
                     env.Pop();
@@ -573,7 +589,8 @@ namespace Harp {
             return new None();
         }
 
-        Val EvalProgn(Env env, Seq ast) {
+        Val EvalProgn(Env env, Seq ast)
+        {
             Val result = new None();
             ast.Items.ForEach(obj => result = EvalObject(env, obj));
             return result;
@@ -589,7 +606,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        string code = " (show (+ 1 2 3)) (show \"Hello World\" (+ 1 2))";
+        string code = File.ReadAllText("test.harp");
         var h = new Harp.Harp();
         var e = new Harp.Env();
         h.LoadHarpLibInto(e);

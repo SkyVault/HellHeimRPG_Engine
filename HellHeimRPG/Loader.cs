@@ -15,6 +15,7 @@ namespace HellHeimRPG {
             var rvertices = new List<float>();
             var rnormals = new List<float>();
             var ruvs = new List<float>();
+            var rindices = new List<uint>();
 
             AssimpContext context = new AssimpContext();
 
@@ -37,16 +38,18 @@ namespace HellHeimRPG {
                     rnormals.Add(mesh.Normals[i].Y);
                     rnormals.Add(mesh.Normals[i].Z);
 
-                    if (mesh.TextureCoordinateChannelCount > 0) {
-                        ruvs.Add(mesh.TextureCoordinateChannels[0][i].X);
-                        ruvs.Add(mesh.TextureCoordinateChannels[0][i].Y);
-                    }
+                    rindices.Add((uint)i);
+
+                    if (mesh.TextureCoordinateChannelCount <= 0) continue;
+
+                    ruvs.Add(mesh.TextureCoordinateChannels[0][i].X);
+                    ruvs.Add(mesh.TextureCoordinateChannels[0][i].Y);
                 }
             }
 
             return new Mesh(rvertices.ToArray(),
-                            rnormals.ToArray(),
-                            ruvs.ToArray());
+                rnormals.ToArray(),
+                ruvs.ToArray()) { Indices = rindices.ToArray() };
         }
     }
 }
