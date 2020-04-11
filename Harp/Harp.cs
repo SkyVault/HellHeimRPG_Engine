@@ -3,8 +3,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.Design;
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Xml;
 using Harp;
 
 namespace Harp {
@@ -218,6 +221,13 @@ namespace Harp {
             else if (this is NativeFunc func) {
                 return $"<native-func>";
             }
+            else if (this is Dict dict) {
+                x += "{";
+                foreach (var key in dict.Pairs.Keys) {
+                    x += $"{key}: {dict[new Str { Value = key }]} ";
+                } 
+                return x + "}";
+            }
             else {
                 Assert.Fail($"Unhandled value in ToString: {this.GetType()}");
             }
@@ -237,11 +247,27 @@ namespace Harp {
     }
 
     public class Dict : Val {
-        public Dictionary<Val, Val> Pairs
-            = new Dictionary<Val, Val>();
+        public Dictionary<string, Val> Pairs
+            = new Dictionary<string, Val>();
+ 
+        public bool Evaluated = false;
+        public List<Val> Literal = new List<Val>();
+
+        private string getKey(Val val) {
+            Assert.IsTrue(val.IsValue);
+
+            if (val is Num num) {
+                return num.Value.ToString(CultureInfo.InvariantCulture); 
+            } else if (val is Str str) {
+                return str.Value;
+            }
+
+            return "";
+        }
+
         public Val this[Val key] {
-            get => Pairs[key];
-            set => Pairs[key] = value;
+            get => Pairs[getKey(key)];
+            set => Pairs[getKey(key)] = value;
         }
     }
 
@@ -308,7 +334,10 @@ namespace Harp {
       <s-expr> ::= <terminal> | '(' <s-expr>* ')'
      */
 
-    public class Harp {
+    public class Harp
+    {
+        private bool breakNext = false;
+
         public static Val StartRepl() {
             var harp = new Harp();
             var env = new Env();
@@ -354,7 +383,8 @@ namespace Harp {
                 var token = lexer.PeekNext();
 
                 if (token.Type == TokTypes.OpenParen 
-                    || token.Type == TokTypes.OpenBracket) {
+                    || token.Type == TokTypes.OpenBracket
+                    || token.Type == TokTypes.OpenBrace) {
                     seq.Items.Add(ParseSExpr(lexer));
                 }
 
@@ -380,7 +410,8 @@ namespace Harp {
                 var token = lexer.PeekNext();
 
                 if (token.Type == TokTypes.OpenParen 
-                    || token.Type == TokTypes.OpenBracket) {
+                    || token.Type == TokTypes.OpenBracket
+                    || token.Type == TokTypes.OpenBrace) {
                     seq.Items.Add(ParseSExpr(lexer));
                 }
 
@@ -397,6 +428,27 @@ namespace Harp {
             }
 
             return seq;
+        }
+
+        private Val ParseDict(Lexer lexer) {
+            var dict = new Dict();
+
+            while (!lexer.Eof) {
+                var peek = lexer.PeekNext();
+
+                if (peek.Type == TokTypes.OpenParen
+                    || peek.Type == TokTypes.OpenBracket
+                    || peek.Type == TokTypes.OpenBrace) {
+                    dict.Literal.Add(ParseSExpr(lexer)); 
+                } else if (peek.IsTerminal) { 
+                    dict.Literal.Add(ParseSExpr(lexer));
+                } else if (peek.Type == TokTypes.CloseBrace) {
+                    lexer.GetNext();
+                    return dict; 
+                }
+            }
+
+            return dict;
         }
 
         Val ParseSExpr(Lexer lexer) {
@@ -425,6 +477,13 @@ namespace Harp {
             if (token.Type == TokTypes.OpenBracket) {
                 lexer.GetNext();
                 var result = ParseVec(lexer);
+                result.Quoted = quoted;
+                return result; 
+            }
+
+            if (token.Type == TokTypes.OpenBrace) {
+                lexer.GetNext();
+                var result = ParseDict(lexer);
                 result.Quoted = quoted;
                 return result; 
             }
@@ -464,6 +523,20 @@ namespace Harp {
                 if (seq.Items[0] is Atom a) {
                     if (a.Name == "progn") {
                         return EvalProgn(env, args);
+                    }
+
+                    if (a.Name == "break") { 
+                        breakNext = true;
+                        return new None();
+                    }
+
+                    if (a.Name == "loop") {
+                        while (!breakNext) {
+                            EvalProgn(env, args); 
+                        }
+
+                        breakNext = false;
+                        return new None();
                     }
 
                     if (a.Name == "if") {
@@ -527,6 +600,7 @@ namespace Harp {
                     }
 
                     if (a.Name == "defn") {
+                        //TODO(Dustin): Handle functions without a body
                         Assert.IsTrue(args.Items.Count >= 3);
                         var name = args.Items[0] as Atom;
 
@@ -580,6 +654,33 @@ namespace Harp {
             if (ast is Num num) { return num; }
             if (ast is Str str) { return str; }
 
+            if (ast is Dict dict) {
+                if (!dict.Evaluated) {
+                    // Evaluating the dictionary
+                    if (dict.Literal.Count % 2 != 0) {
+                        Assert.Fail("Dictionary is missing a key or value");
+                    }
+
+                    for (int i = 0; i < (int)dict.Literal.Count; i += 2) {
+                        var key = EvalObject(env, dict.Literal[i]);
+                        var val = EvalObject(env, dict.Literal[i + 1]);
+
+                        if (key.IsValue == false) {
+                            Assert.Fail("Dictionaries require all of their keys to be values");
+                        }
+
+                        dict[key] = val;
+                    }
+
+                    dict.Literal.Clear();
+                    dict.Literal = null;
+
+                    dict.Evaluated = true;
+                }
+
+                return dict;
+            }
+
             if (ast is Atom _atom) { 
                 return env[_atom.Name];
             }
@@ -606,6 +707,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        Harp.Harp.StartRepl();
         string code = File.ReadAllText("test.harp");
         var h = new Harp.Harp();
         var e = new Harp.Env();

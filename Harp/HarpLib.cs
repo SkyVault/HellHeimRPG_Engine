@@ -111,7 +111,39 @@ namespace Harp {
                 }
             };
 
-            env.Vars[0]["show"] = new NativeFunc {
+            env.Vars[0]["io/write"] = new NativeFunc {
+                Func = (args) => {
+                    args.Items.ForEach((i) => {
+                        Console.Write($"{harp.EvalObject(env, i)} ");
+                    });
+                    return args;
+                }
+            };
+
+            env.Vars[0]["io/set-cursor"] = new NativeFunc {
+                Func = (args) =>
+                {
+                    if (args.Items.Count < 2)
+                    {
+                        Console.WriteLine("< function requires 2 arguments");
+                        return Bool.False;
+                    }
+
+                    if (getTerminal(args[0]) is Num an && getTerminal(args[1]) is Num bn)
+                    {
+                        Console.SetCursorPosition(
+                            (int) Math.Floor(an.Value),
+                            (int) Math.Floor(bn.Value)
+                        );
+                        return new Vec() {Items = new List<Val> {an, bn}};
+                    }
+
+                    Console.WriteLine("io/set-cursor expects 2 integer arguments");
+                    return new None();
+                }
+            };
+
+            env.Vars[0]["io/writeln"] = new NativeFunc {
                 Func = (args) => {
                     args.Items.ForEach((i) => {
                         Console.WriteLine($"{harp.EvalObject(env, i)} ");
@@ -120,7 +152,7 @@ namespace Harp {
                 }
             };
 
-            env.Vars[0]["read"] = new NativeFunc {
+            env.Vars[0]["io/read-line"] = new NativeFunc {
                 Func = (args) => {
                     var input = Console.ReadLine();
                     if (double.TryParse(input, out double n)) {
@@ -131,7 +163,55 @@ namespace Harp {
                 }
             };
 
-            env.Vars[0]["v-push"] = new NativeFunc {
+            env.Vars[0]["io/clear"] = new NativeFunc() {
+                Func = (args) => { Console.Clear(); return new None(); } 
+            };
+
+            env.Vars[0]["io/read-key"] = new NativeFunc {
+                Func = (args) => {
+                    var input = Console.ReadKey(true).KeyChar.ToString();
+                    if (double.TryParse(input, out var n)) {
+                        return new Num() {Value = n};
+                    } else {
+                        return new Str() {Value = input};
+                    }
+                }
+            };
+
+            env.Vars[0]["d/get"] = new NativeFunc() {
+                Func = (args) => {
+                    if (args.Items.Count != 2) {
+                        Console.WriteLine("g/get requires 2 arguments (dict, key)");
+                        return new None();
+                    }
+
+                    if (harp.EvalObject(env, args[0]) is Dict d) {
+                        return d[harp.EvalObject(env, args[1])];
+                    } else {
+                        Console.WriteLine("g/get requires its first argument to be the dictionary");
+                        return new None();
+                    }
+                } 
+            };
+
+            env.Vars[0]["d/set"] = new NativeFunc() {
+                Func = (args) => {
+                    if (args.Items.Count != 3) {
+                        Console.WriteLine("g/set requires 3 arguments (dict key value)");
+                        return new None();
+                    } 
+                    if (harp.EvalObject(env, args[0]) is Dict d) {
+                        var key = harp.EvalObject(env, args[1]);
+                        d[key] = harp.EvalObject(env, args[2]);
+                        return d[key];
+                    } else {
+                        Console.WriteLine("g/get requires its first argument to be the dictionary");
+                        return new None();
+                    }
+                }
+            };
+
+            env.Vars[0]["v/push"] = new NativeFunc {
                 Func = (args) => {
                     proto(args, "v-push", typeof(Vec), typeof(Val));
 
@@ -151,7 +231,7 @@ namespace Harp {
                 }
             };
 
-            env.Vars[0]["v-get"] = new NativeFunc {
+            env.Vars[0]["v/get"] = new NativeFunc {
                 Func = (args) => {
                     if (args.Items.Count < 2) { Console.WriteLine($"v-get expects at least 2 arguments"); }
 
