@@ -213,7 +213,7 @@ namespace Harp {
 
             env.Vars[0]["v/push"] = new NativeFunc {
                 Func = (args) => {
-                    proto(args, "v-push", typeof(Vec), typeof(Val));
+                    proto(args, "v/push", typeof(Vec), typeof(Val));
 
                     if (args.Items.Count < 2) { Console.WriteLine($"v-push expects at least 2 arguments"); }
                     if (harp.EvalObject(env, args.Items[0]) is Vec v) {

@@ -4,11 +4,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.Design;
+using System.Data.SqlTypes;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Xml;
 using Harp;
+using Mono.Terminal;
 
 namespace Harp {
     public enum TokTypes {
@@ -17,6 +19,7 @@ namespace Harp {
         Number,
         String,
         Quote,
+        Bool,
         DoubleQuote,
         OpenParen,
         CloseParen,
@@ -36,7 +39,8 @@ namespace Harp {
             get =>
                 Type == TokTypes.Atom ||
                 Type == TokTypes.Number ||
-                Type == TokTypes.String;
+                Type == TokTypes.String ||
+                Type == TokTypes.Bool;
         }
     }
 
@@ -63,7 +67,7 @@ namespace Harp {
         }
 
         public void SkipWhiteSpace() {
-            while (!_it.Eof && char.IsWhiteSpace(_it.Current))
+            while (!_it.Eof && char.IsWhiteSpace(Ch))
                 _it.Next();
         }
 
@@ -74,15 +78,19 @@ namespace Harp {
             return token;
         }
 
-        public Token GetNext()
-        {
-            return _getNext();
-        }
+        public Token GetNext() { return _getNext(); }
 
         Token _getNext() { 
             SkipWhiteSpace();
 
             (bool isNeg, bool isDec) flags = (false, false);
+
+            if (Ch == ';')
+            {
+                while (!_it.Eof && Ch != '\n') {
+                    _it.Next();
+                }
+            }
 
             var start = _it.Ref;
             if (Ch == '-') { flags.isNeg = true; _it.Next(); }
@@ -128,6 +136,18 @@ namespace Harp {
                 case '\'': { _it.Next(); return new Token(TokTypes.Quote, ch); }
             }
 
+            if (Ch == '#') {
+                start = _it.Ref;
+                _it.Next();
+
+                var _ch = Ch;
+                if (!_it.Eof && (Ch == 'f' || Ch == 't')) {
+                    _it.Next();
+                    return new Token(TokTypes.Bool, _ch.ToString());
+                } 
+                _it = start.Ref;
+            }
+
             // Handle string literals 
             start = _it.Ref;
             if (Ch == '\"') {
@@ -163,7 +183,7 @@ namespace Harp {
                         start.Next();
                     }
 
-                    return new Token(TokTypes.Atom, lexeme);
+                    return lexeme == "" ? _getNext() : new Token(TokTypes.Atom, lexeme);
                 }
 
                 _it.Next();
@@ -199,7 +219,7 @@ namespace Harp {
             else if (this is Num num) { return num.Value.ToString(); }
             else if (this is Str str) { return str.Value; }
             else if (this is Atom atom) { return atom.Name; }
-            else if (this is Bool b) { return b.Flag ? "true" : "false"; } 
+            else if (this is Bool b) { return b.Flag ? "#t" : "#f"; } 
             else if (this is Lambda lambda) { return $"<lambda>"; } 
             else if (this is Seq seq) {
                 if (seq.Items.Count == 0) { return "()"; }
@@ -288,6 +308,7 @@ namespace Harp {
     public class Lambda : Val {
         public List<string> Args = new List<string>();
         public Seq Progn = new Seq();
+        public Dictionary<string, Val> Closure = null;
     }
 
     public class None : Val { }
@@ -295,6 +316,19 @@ namespace Harp {
     public class Env : Val {
         public List<Dictionary<string, Val>> Vars
             = new List<Dictionary<string, Val>> { new Dictionary<string, Val>() };
+
+        public Env Clone()
+        {
+            var env = new Env();
+            foreach(var scope in env.Vars) {
+                var d = new Dictionary<string, Val>();
+                foreach (var key in scope.Keys) {
+                    d[key] = scope[key];
+                }
+                env.Vars.Add(d);
+            }
+            return env;
+        }
 
         public void Push() {
             Vars.Add(new Dictionary<string, Val>());
@@ -336,24 +370,32 @@ namespace Harp {
 
     public class Harp
     {
-        private bool breakNext = false;
+        private bool breakNext = false; 
 
-        public static Val StartRepl() {
+        public static void StartRepl() { 
             var harp = new Harp();
             var env = new Env();
             harp.LoadHarpLibInto(env);
 
-            while (true) {
-                Console.Write($"> "); 
+            LineEditor le = new LineEditor("repl") {
+                HeuristicsMode = "csharp"
+            };
 
-                var input  = Console.ReadLine();
+            le.AutoCompleteEvent += (text, pos) =>
+            {
+                string prefix = "";
+                var completions = new string[] {
+                    "defn", "let", "def", "lambda", "#f", "#t", "io/write", "io/writeln", "io/readkey", "io/readline",
+                    "loop", "dotimes"
+                };
+                return new LineEditor.Completion(prefix, completions);
+            };
 
-                var result = harp.Eval(env, input);
-                env.Vars[0]["$"] = result; 
-                Console.WriteLine($"\n{result}");
+            string code; 
+            while ((code = le.Edit("> ", "")) != null) {
+                var result = harp.Eval(env, code); 
+                Console.WriteLine(result);
             }
-
-            return new None();
         }
 
         Val ParseObject(Lexer lexer) {
@@ -370,6 +412,10 @@ namespace Harp {
 
             if (token.Type == TokTypes.String) {
                 return new Str { Value = token.Lexeme.Substring(1, token.Lexeme.Length - 2) };
+            }
+
+            if (token.Type == TokTypes.Bool) {
+                return new Bool {Flag = (token.Lexeme == "t")};
             }
 
             Assert.Fail($"Unhandled token type {token.Type}");
@@ -453,7 +499,7 @@ namespace Harp {
 
         Val ParseSExpr(Lexer lexer) {
             var token = lexer.PeekNext();
-            bool quoted = false;
+            bool quoted = false; 
 
             if (token.Type == TokTypes.Quote) {
                 quoted = true;
@@ -530,6 +576,24 @@ namespace Harp {
                         return new None();
                     }
 
+                    if (a.Name == "dotimes") {
+                        if (args.Items.Count < 2) {
+                            Console.WriteLine("dotimes requires at least 1 argument");
+                        }
+
+                        if (args[0] is Num times) {
+                            int n = (int)Math.Floor(times.Value);
+                            var progn = new Seq();
+                            for (int i = 1; i < args.Items.Count; i++) { progn.Items.Add(args[i]);}
+                            for (int i = 0; i < n; i++) {
+                                EvalProgn(env, progn);
+                            } 
+                        } else { 
+                            Console.WriteLine("dotimes requires a number argument");
+                        }
+
+                    }
+
                     if (a.Name == "loop") {
                         while (!breakNext) {
                             EvalProgn(env, args); 
@@ -593,10 +657,15 @@ namespace Harp {
                         var xss = new List<string>();
                         xs.Items.ForEach(x => xss.Add((x as Atom).Name));
 
-                        return new Lambda {
+                        // Shallow 
+                        var theClosure = env.Vars[env.Vars.Count - 1];
+
+                        var lamb = new Lambda {
                             Args = xss,
-                            Progn = body
+                            Progn = body,
+                            Closure = theClosure
                         };
+                        return lamb;
                     }
 
                     if (a.Name == "defn") {
@@ -639,8 +708,17 @@ namespace Harp {
                     env.Push();
                     for (int i = 0; i < args.Items.Count; i++) {
                         env.Put(_lambda.Args[i], 
-                            EvalObject(env, args.Items[i]));
+                            EvalObject(env, args.Items[i])); 
                     }
+
+                    // Put the closure into the environment
+                    if (_lambda.Closure != null) {
+                        foreach (var key in _lambda.Closure.Keys)
+                        {
+                            env.Put(key, _lambda.Closure[key]);
+                        }
+                    }
+
                     var result = EvalProgn(env, _lambda.Progn);
                     env.Pop();
                     return result;
@@ -653,6 +731,7 @@ namespace Harp {
 
             if (ast is Num num) { return num; }
             if (ast is Str str) { return str; }
+            if (ast is Bool bol) { return bol; }
 
             if (ast is Dict dict) {
                 if (!dict.Evaluated) {
@@ -683,8 +762,7 @@ namespace Harp {
 
             if (ast is Atom _atom) { 
                 return env[_atom.Name];
-            }
-
+            } 
 
             Console.WriteLine($"Unhandled val type in EvalObject: {ast}");
             return new None();
@@ -707,7 +785,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        Harp.Harp.StartRepl();
+
+        //Harp.Harp.StartRepl();
+
         string code = File.ReadAllText("test.harp");
         var h = new Harp.Harp();
         var e = new Harp.Env();
