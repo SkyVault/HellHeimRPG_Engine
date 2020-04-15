@@ -170,9 +170,9 @@ namespace HellHeimRPG.Editor {
                         if (ImGui.CollapsingHeader(name))
                         {
                             ImGui.Image((IntPtr) fbo.ColorBuffer,
-                                new System.Numerics.Vector2(200, 200),
+                                new System.Numerics.Vector2(200*(16f/9f), 200),
                                 new System.Numerics.Vector2(0, 0),
-                                new System.Numerics.Vector2(1, 1),
+                                new System.Numerics.Vector2(1, -1),
                                 new System.Numerics.Vector4(1, 1, 1, 1),
                                 new System.Numerics.Vector4(1, 1, 1, 1));
                         }

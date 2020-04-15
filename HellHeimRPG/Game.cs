@@ -34,6 +34,8 @@ namespace HellHeimRPG
         private static (int, int) _windowSize = (0, 0);
         public static (int, int) WindowSize { get => _windowSize; }
 
+        public static (int W, int H) Resolution => (640, 240);
+
         public void Resize((int, int) size) => Game._windowSize = size;
 
         private static Camera3D _camera = new Camera3D();
@@ -102,21 +104,14 @@ namespace HellHeimRPG
 
             var cube = Ecs.It.Create();
             cube.Tag = "cube";
-            cube.Add(new Transform()
-            {
-                Translation = new Vector3(0.0f, 0.0f, -2.0f),
-                Scale = new Vector3(0.2f, 0.2f, 0.2f)
-            });
+            cube.Add(new Transform() { Translation = new Vector3(0.0f, 0.0f, -2.0f), Scale = new Vector3(0.2f, 0.2f, 0.2f) });
             cube.Add(cubem);
-            cube.Add(
-                Physics.CreateRidgedBody(10, Matrix4.Identity,
-                    Physics.AddBoxShape(new BulletSharp.Math.Vector3(1, 1, 1)))
-            );
+            cube.Add(Physics.CreateRidgedBody(10, Matrix4.Identity, Physics.AddBoxShape(new BulletSharp.Math.Vector3(1, 1, 1))));
             cube.Add(new Selectable());
 
-            cube.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, 20, 0));
+            cube.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, 0, 0));
 
-            framebuffer = Art.It.CreateFbo(1280, 720, "main");
+            framebuffer = Art.It.CreateFbo(Resolution.W, Resolution.H, "main");
         }
 
         public void Tick(double delta)
@@ -138,6 +133,7 @@ namespace HellHeimRPG
                 GL.Enable(EnableCap.DepthTest);
                 GL.ClearColor(0, 0, 0, 1);
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                GL.Viewport(0, 0, Game.Resolution.W, Game.Resolution.H);
 
                 Ecs.It.Render(); 
             });

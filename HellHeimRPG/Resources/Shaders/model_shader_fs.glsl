@@ -11,6 +11,8 @@ uniform vec3 viewPos = vec3(0, 0, 0);
 uniform vec3 lightColor = vec3(1, 1, 1);
 uniform vec3 diffuse = vec3(1, 1, 1);
 
+uniform float hasTexture = 0.0;
+
 uniform float specularStrength = 0.5;
 
 uniform sampler2D sampler1;
@@ -35,5 +37,7 @@ void main() {
 
 	vec4 textureColor = texture(sampler1, Uvs);
 
-	Result = vec4(result, 1.0f) * textureColor;
+	Result = vec4(result, 1.0f);
+
+	if (hasTexture > 0.0) Result *= textureColor;
 } 
