@@ -5,7 +5,7 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace HellHeimRPG
 {
-    class Texture {
+    public class Texture {
         public int Width { get; set; } = 0;
         public int Height { get; set; } = 0;
         public int Mips { get; set; } = 0;

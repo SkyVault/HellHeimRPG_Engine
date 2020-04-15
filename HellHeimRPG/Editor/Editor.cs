@@ -4,11 +4,17 @@ using OpenTK.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
+using Quaternion = OpenTK.Quaternion;
+using Vector3 = OpenTK.Vector3;
 
 namespace HellHeimRPG.Editor {
     class Editor {
+        CommandWindow commandWindow = new CommandWindow();
+
         public void DoEditor() {
 
         }
@@ -66,6 +72,19 @@ namespace HellHeimRPG.Editor {
                             }
 
                             foreach(var member in properties) {
+
+                                if (member.CanRead && !member.CanWrite) {
+                                    ImGui.Text(member.Name);
+                                    if (member.PropertyType == typeof(float)) {
+                                        ImGui.SameLine();
+                                        ImGui.Text(((float)member.GetValue(comp, null)).ToString(CultureInfo.InvariantCulture));
+                                    }
+                                    if (member.PropertyType == typeof(int)) {
+                                        ImGui.SameLine();
+                                        ImGui.Text(((int)member.GetValue(comp, null)).ToString(CultureInfo.InvariantCulture));
+                                    }
+                                }
+
                                 if (!member.CanRead || !member.CanWrite)
                                     continue;
 
@@ -130,10 +149,35 @@ namespace HellHeimRPG.Editor {
             }
         }
 
-        public void Render() {
+        private bool open = false;
+
+        public void Render()
+        {
+            if (Input.It.ToggleEditor)
+                open = !open;
+
+            if (!open) return;
+
             ImGui.ShowDemoWindow();
 
+            commandWindow.Do();
+
             if (ImGui.Begin("Editor")) {
+                if (ImGui.TreeNode("Frame buffers"))
+                {
+                    foreach (var (name, fbo) in Art.It.Fbos())
+                    {
+                        if (ImGui.CollapsingHeader(name))
+                        {
+                            ImGui.Image((IntPtr) fbo.ColorBuffer,
+                                new System.Numerics.Vector2(200, 200),
+                                new System.Numerics.Vector2(0, 0),
+                                new System.Numerics.Vector2(1, 1),
+                                new System.Numerics.Vector4(1, 1, 1, 1),
+                                new System.Numerics.Vector4(1, 1, 1, 1));
+                        }
+                    }
+                }
 
                 ImGui.End();
             }

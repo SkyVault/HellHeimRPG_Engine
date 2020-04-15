@@ -1,6 +1,6 @@
 ﻿namespace HellHeimRPG
 {
-    class Mesh {
+    public class Mesh {
         float[] _vertices; 
         float[] _normals;
         float[] _uvs;

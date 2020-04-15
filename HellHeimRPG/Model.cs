@@ -15,6 +15,12 @@ namespace HellHeimRPG
         int _tbo = 0;
         int _ibo = 0;
 
+        public int Vao { get => _vao; } 
+        public int Vbo { get => _vbo; }
+        public int Nbo { get => _nbo; }
+        public int Tbo { get => _tbo; }
+        public int Ibo { get => _ibo; }
+
         public Model() { }
 
         public Model(Mesh mesh) {

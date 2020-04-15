@@ -83,5 +83,7 @@ namespace HellHeimRPG {
                 return (state.IsKeyDown(Key.D));
             }
         }
+
+        public bool ToggleEditor => IsKeyPressed(Key.Tilde);
     }
 }

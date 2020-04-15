@@ -34,16 +34,16 @@ namespace HellHeimRPG {
                     controller.WindowResized(win.Width, win.Height);
                 };
 
+                win.KeyPress += (sender, e) => {
+                    controller.PressChar(e.KeyChar);
+                };
+
                 win.UpdateFrame += (sender, e) => {
                     game.Tick(e.Time);
                 };
 
                 win.RenderFrame += (sender, e) => { 
-                    GL.ClearColor(new Color4(0, 40, 40, 255));
-                    GL.Clear(ClearBufferMask.ColorBufferBit |
-                             ClearBufferMask.DepthBufferBit |
-                             ClearBufferMask.StencilBufferBit);
-
+                    GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
                     GL.Enable(EnableCap.DepthTest); 
 
                     game.Render();

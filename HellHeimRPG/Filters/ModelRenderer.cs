@@ -2,6 +2,7 @@
 using OpenTK;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Text;
 using BulletSharp;
@@ -91,6 +92,20 @@ namespace HellHeimRPG.Filters {
 
                     model.Bind(() => {
                         GL.DrawArrays(PrimitiveType.Triangles, 0, model.Mesh.Vertices.Length / 3);
+
+                        if (ent.Has<Selectable>()) {
+                            if (ent.Get<Selectable>().State) { 
+                                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+                                GL.LineWidth(3);
+
+                                var r = (((int) ((Math.Sin(Game.Clock.Time * 8) / 3) * (color.R) * 255) + 255/2) % 255) / 255f;
+                                var g = (((int) ((Math.Sin(Game.Clock.Time * 8.1) / 3) * (color.G) * 255) + 255/2) % 255) / 255f;
+                                var b = (((int) ((Math.Sin(Game.Clock.Time * 8.2) / 3) * (color.B) * 255) + 255/2) % 255) / 255f;
+                                _shader.SetUniform(_shader.GetLoc("diffuse"), r, g, b);
+                                GL.DrawArrays(PrimitiveType.Triangles, 0, model.Mesh.Vertices.Length / 3);
+                                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+                            }
+                        }
                     }); 
 
                     if (model.Material.HasTexture) {
