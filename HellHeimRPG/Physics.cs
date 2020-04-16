@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using OpenTK;
 using System.Text;
 using BulletSharp;
@@ -30,6 +31,10 @@ namespace HellHeimRPG {
 
             //// Test ground
             //var ground = CreateRidgedBody(0, Matrix4.Identity, AddBoxShape(new Vector3(100, 1, 100)));
+        }
+
+        public BulletSharp.Math.Vector3 Convert(OpenTK.Vector3 v) {
+            return new BulletSharp.Math.Vector3 {X = v.X, Y = v.Y, Z = v.Z};
         }
 
         public BulletSharp.Math.Vector4 Convert(OpenTK.Vector4 v) {
@@ -90,8 +95,25 @@ namespace HellHeimRPG {
 
         public CollisionShape AddStaticMeshShape(Mesh mesh, Matrix4 transform)
         {
+            var trimesh = new TriangleMesh();
+            foreach (var (a, b, c) in mesh.Triangles()) {
+                trimesh.AddTriangle(Convert(a), Convert(b), Convert(c));
+            }
 
-            return null;
+            List<float> _vs = mesh.Vertices.ToList();
+            List<int> _is = new List<int>();
+
+            for (int i = 0; i < _vs.Count; i+=3)
+            {
+                _vs[i + 1] -= 8;
+            }
+
+            foreach (var i in mesh.Indices) { _is.Add((int) i);}
+
+            var arr = new TriangleIndexVertexArray(_is, _vs);
+            var shape = new BvhTriangleMeshShape(arr, true);
+            collisionShapes.Add(shape); 
+            return shape;
         }
 
         public void Update()

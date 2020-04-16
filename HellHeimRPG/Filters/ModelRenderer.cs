@@ -32,7 +32,7 @@ namespace HellHeimRPG.Filters {
             modelLoc = _shader.GetLoc("model");
             hasTextureLoc = _shader.GetLoc("hasTexture"); 
             specularStrengthLoc = _shader.GetLoc("specularStrength");
-            diffuseLoc = _shader.GetLoc("diffuseLoc");
+            diffuseLoc = _shader.GetLoc("diffuse");
         }
 
         public override void OnCleanup(Ent ent) {

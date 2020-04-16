@@ -88,28 +88,35 @@ namespace HellHeimRPG
             var monkey = Ecs.It.Create();
             monkey.Tag = "monkey";
             monkey.Add(model);
-            monkey.Add(new Transform()
-            {
+            monkey.Add(new Transform() {
                 Translation = new Vector3(0, 0, -4),
                 Scale = new Vector3(1.0f, 1.0f, 1.0f),
             });
             monkey.Add(new Selectable() { State = true });
+            monkey.Add(
+                Physics.CreateRidgedBody(
+                    1f,
+                    Matrix4.Identity, Physics.AddStaticMeshShape(model.Mesh, monkey.Get<Transform>().Matrix)));
+            monkey.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, 20, 0));
 
             var terrain = Ecs.It.Create();
             terrain.Tag = "terrain";
-            terrain.Add(new Transform() { Translation = new Vector3(-1, -0.2f, -3) });
+            terrain.Add(new Transform() { Translation = new Vector3(0, 0, 0) });
             terrain.Add(terr);
-            terrain.Add(Physics.AddStaticMeshShape(terr.Mesh, terrain.Get<Transform>().Matrix));
+            terrain.Add(
+                Physics.CreateRidgedBody(
+                    0f,
+                    Matrix4.Identity, Physics.AddStaticMeshShape(terr.Mesh, terrain.Get<Transform>().Matrix)));
             terrain.Add(new Selectable());
+            terrain.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, -2, 0));
 
             var cube = Ecs.It.Create();
             cube.Tag = "cube";
             cube.Add(new Transform() { Translation = new Vector3(0.0f, 0.0f, -2.0f), Scale = new Vector3(0.2f, 0.2f, 0.2f) });
             cube.Add(cubem);
             cube.Add(Physics.CreateRidgedBody(10, Matrix4.Identity, Physics.AddBoxShape(new BulletSharp.Math.Vector3(1, 1, 1))));
-            cube.Add(new Selectable());
-
-            cube.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, 0, 0));
+            cube.Add(new Selectable()); 
+            cube.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, 20, 0));
 
             framebuffer = Art.It.CreateFbo(Resolution.W, Resolution.H, "main");
         }
