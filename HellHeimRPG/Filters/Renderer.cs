@@ -22,6 +22,9 @@ namespace HellHeimRPG.Filters
         private int diffuseLoc = -1;
 
         private FrameBuffer selectionBuffer;
+        private Cubemap cubemap = new Cubemap();
+
+        public static string ScreenFBO { get; set; } = "main";
 
         public Renderer()
         {
@@ -48,6 +51,14 @@ namespace HellHeimRPG.Filters
             selectionBuffer = new FrameBuffer(Game.Resolution.W, Game.Resolution.H);
 
             Art.It.Add(selectionBuffer, "selection");
+
+            cubemap.Load(
+                "Resources/Textures/skybox/right.png",
+                "Resources/Textures/skybox/left.png",
+                "Resources/Textures/skybox/top.png",
+                "Resources/Textures/skybox/bottom.png",
+                "Resources/Textures/skybox/front.png",
+                "Resources/Textures/skybox/back.png");
         }
 
         public override void OnCleanup(Ent ent)
@@ -62,7 +73,7 @@ namespace HellHeimRPG.Filters
         {
         }
 
-        internal override void Render()
+        internal void RenderMain()
         {
             _terrainShader.Bind(() =>
             {
@@ -148,47 +159,72 @@ namespace HellHeimRPG.Filters
                     render(ent, model, body.Matrix);
                 }
             });
+        }
+
+        internal void RenderSelection()
+        {
+            _selectionShader.Bind(() =>
+            {
+                _selectionShader.SetUniform(_selectionShader.GetLoc("projection"), Art.It.Projection);
+                _selectionShader.SetUniform(_selectionShader.GetLoc("view"), Game.Camera.ViewMatrix);
+
+                foreach (var ent in Ecs.It.Each(typeof(RigidBody), typeof(Model), typeof(Selectable)))
+                {
+                    var selectable = ent.Get<Selectable>();
+                    var model = ent.Get<Model>();
+                    var matrix = Game.Physics.Convert(ent.Get<RigidBody>().WorldTransform);
+
+                    _selectionShader.SetUniform(_selectionShader.GetLoc("Key"), selectable.Key);
+                    _selectionShader.SetUniform(_selectionShader.GetLoc("model"), matrix);
+
+                    model.Bind(() =>
+                    {
+                        GL.DrawArrays(PrimitiveType.Triangles, 0, model.Mesh.Vertices.Length / 3);
+                    });
+                }
+
+                foreach (var ent in Ecs.It.Each(typeof(Transform), typeof(Model), typeof(Selectable)))
+                {
+                    var selectable = ent.Get<Selectable>();
+                    var model = ent.Get<Model>();
+
+                    _selectionShader.SetUniform(_selectionShader.GetLoc("Key"), selectable.Key);
+                    _selectionShader.SetUniform(_selectionShader.GetLoc("model"), ent.Get<Transform>().Matrix);
+
+                    model.Bind(() =>
+                    {
+                        GL.DrawArrays(PrimitiveType.Triangles, 0, model.Mesh.Vertices.Length / 3);
+                    });
+                }
+            });
+        }
+
+        internal override void Render()
+        {
+            var fbo = Art.It.GetFbo("main");
+
+            fbo.Bind(() =>
+            {
+                GL.Enable(EnableCap.DepthTest);
+                GL.ClearColor(0, 0, 0, 1);
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                GL.Viewport(0, 0, Game.Resolution.W, Game.Resolution.H);
+
+                Art.It.RenderSkyBox(cubemap, Art.It.Projection, Game.Camera.ViewMatrixStatic);
+                RenderMain();
+            });
 
             selectionBuffer.Bind(() =>
             {
-                _selectionShader.Bind(() =>
-                {
-                    GL.ClearColor(0, 0, 0, 1);
-                    GL.Clear(ClearBufferMask.ColorBufferBit);
+                GL.Enable(EnableCap.DepthTest);
+                GL.ClearColor(0, 0, 0, 1);
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                GL.Viewport(0, 0, Game.Resolution.W, Game.Resolution.H);
 
-                    _selectionShader.SetUniform(_selectionShader.GetLoc("projection"), Art.It.Projection);
-                    _selectionShader.SetUniform(_selectionShader.GetLoc("view"), Game.Camera.ViewMatrix);
-
-                    foreach (var ent in Ecs.It.Each(typeof(RigidBody), typeof(Model), typeof(Selectable)))
-                    {
-                        var selectable = ent.Get<Selectable>();
-                        var model = ent.Get<Model>();
-                        var matrix = Game.Physics.Convert(ent.Get<RigidBody>().WorldTransform);
-
-                        _selectionShader.SetUniform(_selectionShader.GetLoc("Key"), selectable.Key);
-                        _selectionShader.SetUniform(_selectionShader.GetLoc("model"), matrix);
-
-                        model.Bind(() =>
-                        {
-                            GL.DrawArrays(PrimitiveType.Triangles, 0, model.Mesh.Vertices.Length / 3);
-                        });
-                    }
-
-                    foreach (var ent in Ecs.It.Each(typeof(Transform), typeof(Model), typeof(Selectable)))
-                    {
-                        var selectable = ent.Get<Selectable>();
-                        var model = ent.Get<Model>();
-
-                        _selectionShader.SetUniform(_selectionShader.GetLoc("Key"), selectable.Key);
-                        _selectionShader.SetUniform(_selectionShader.GetLoc("model"), ent.Get<Transform>().Matrix);
-
-                        model.Bind(() =>
-                        {
-                            GL.DrawArrays(PrimitiveType.Triangles, 0, model.Mesh.Vertices.Length / 3);
-                        });
-                    }
-                });
+                RenderSelection();
             });
+
+            Art.It.RenderToScreen(Art.It.GetFbo(ScreenFBO));
         }
     }
 }

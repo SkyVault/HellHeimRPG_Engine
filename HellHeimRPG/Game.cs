@@ -53,8 +53,6 @@ namespace HellHeimRPG
 
         private FrameBuffer framebuffer;
 
-        private Cubemap cubemap = new Cubemap();
-
         public void Load()
         {
             // Init harp
@@ -108,14 +106,6 @@ namespace HellHeimRPG
             cube.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, 20, 0));
 
             framebuffer = Art.It.CreateFbo(Resolution.W, Resolution.H, "main");
-
-            cubemap.Load(
-                "Resources/Textures/skybox/right.png",
-                "Resources/Textures/skybox/left.png",
-                "Resources/Textures/skybox/top.png",
-                "Resources/Textures/skybox/bottom.png",
-                "Resources/Textures/skybox/front.png",
-                "Resources/Textures/skybox/back.png");
         }
 
         public void Tick(double delta)
@@ -130,23 +120,6 @@ namespace HellHeimRPG
             Ecs.It.Update();
         }
 
-        public void Render()
-        {
-            var fbo = Art.It.GetFbo("selection");
-
-            fbo.Bind(() =>
-            {
-                GL.Enable(EnableCap.DepthTest);
-                GL.ClearColor(0, 0, 0, 1);
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-                GL.Viewport(0, 0, Game.Resolution.W, Game.Resolution.H);
-
-                Art.It.RenderSkyBox(cubemap, Art.It.Projection, Game.Camera.ViewMatrixStatic);
-
-                Ecs.It.Render();
-            });
-
-            Art.It.RenderToScreen(fbo);
-        }
+        public void Render() => Ecs.It.Render();
     }
 }
