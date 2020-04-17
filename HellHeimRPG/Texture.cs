@@ -5,7 +5,7 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace HellHeimRPG
 {
-    public class Texture {
+    public class Texture : IResource {
         public int Width { get; set; } = 0;
         public int Height { get; set; } = 0;
         public int Mips { get; set; } = 0;
@@ -15,13 +15,19 @@ namespace HellHeimRPG
             if (Id > 0) GL.DeleteTexture(Id);
         }
 
+        public Texture()
+        {
+        }
+
+        public Texture(string path) => Load(path);
+
         public void Load(string path) {
             Bitmap bitmap = new Bitmap(path);
 
             Id = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, Id);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
 
             BitmapData data = bitmap.LockBits(
                 new Rectangle(0, 0, bitmap.Width, bitmap.Height),
@@ -38,6 +44,11 @@ namespace HellHeimRPG
 
             bitmap.UnlockBits(data); 
             GL.BindTexture(TextureTarget.Texture2D, 0);
+        }
+
+        public void Load(params string[] path)
+        {
+            throw new NotImplementedException();
         }
 
         public void Bind(Action action) {

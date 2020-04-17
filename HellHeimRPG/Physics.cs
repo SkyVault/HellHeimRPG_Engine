@@ -103,6 +103,7 @@ namespace HellHeimRPG {
             List<float> _vs = mesh.Vertices.ToList();
             List<int> _is = new List<int>();
 
+            // @HACK, a hack that doesn't even work :/
             for (int i = 0; i < _vs.Count; i+=3)
             {
                 _vs[i + 1] -= 8;

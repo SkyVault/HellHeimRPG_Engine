@@ -93,5 +93,15 @@ namespace HellHeimRPG {
                 );
             }
         }
+
+        public Matrix4 ViewMatrixStatic {
+            get {
+                return Matrix4.LookAt(
+                    Vector3.Zero, 
+                    Front,
+                    new Vector3(0, 1, 0)
+                );
+            }
+        }
     }
 }

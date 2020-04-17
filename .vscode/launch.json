@@ -8,10 +8,10 @@
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Harp/bin/Debug/netcoreapp3.1/Harp.dll",
+            "preLaunchTask": "buildit",
+            "program": "${workspaceFolder}/HellHeimRPG/bin/Debug/netcoreapp3.1/HellHeimRPG.exe",
             "args": [],
-            "cwd": "${workspaceFolder}/Harp",
+            "cwd": "${workspaceFolder}/HellHeimRPG/bin/Debug/netcoreapp3.1",
             "console": "internalConsole",
             "stopAtEntry": false
         },

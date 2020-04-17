@@ -46,12 +46,14 @@ namespace HellHeimRPG
 
         public static Clock Clock { get; } = new Clock();
 
-        public static Physics Physics { get; protected set; }
+        public static Physics Physics { get; private set; }
 
-        public static Harp.Harp Harp { get; protected set; } = new Harp.Harp();
-        public static Harp.Env Env { get; protected set; } = new Harp.Env();
+        public static Harp.Harp Harp { get; private set; } = new Harp.Harp();
+        public static Harp.Env Env { get; private set; } = new Harp.Env();
 
         private FrameBuffer framebuffer;
+
+        private Cubemap cubemap = new Cubemap();
 
         public void Load()
         {
@@ -67,7 +69,7 @@ namespace HellHeimRPG
             _levels.Add(new Level());
 
             // Register all the filters
-            Ecs.It.Register<ModelRenderer>();
+            Ecs.It.Register<Renderer>();
 
             Assets.It.Add(Loader.LoadMesh("Resources/Models/monkey.obj"), "monkey");
             Assets.It.Add(Loader.LoadMesh("Resources/Models/cube.obj"), "cube");
@@ -75,7 +77,7 @@ namespace HellHeimRPG
 
             var model = new Model(Assets.It.Get<Mesh>("monkey"));
             var cubem = new Model(Assets.It.Get<Mesh>("cube"));
-            var terr  = new Model(Assets.It.Get<Mesh>("terrain"));
+            var terr = new Model(Assets.It.Get<Mesh>("terrain"));
 
             var texture = new Texture();
             texture.Load("Resources/Textures/grass.jpg");
@@ -88,37 +90,32 @@ namespace HellHeimRPG
             var monkey = Ecs.It.Create();
             monkey.Tag = "monkey";
             monkey.Add(model);
-            monkey.Add(new Transform() {
-                Translation = new Vector3(0, 0, -4),
-                Scale = new Vector3(1.0f, 1.0f, 1.0f),
-            });
-            monkey.Add(new Selectable() { State = true });
-            monkey.Add(
-                Physics.CreateRidgedBody(
-                    1f,
-                    Matrix4.Identity, Physics.AddStaticMeshShape(model.Mesh, monkey.Get<Transform>().Matrix)));
-            monkey.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, 20, 0));
+            monkey.Add(new Transform() { Translation = new Vector3(0, 0, -4), Scale = new Vector3(1.0f, 1.0f, 1.0f), });
+            monkey.Add(new Selectable());
 
             var terrain = Ecs.It.Create();
             terrain.Tag = "terrain";
-            terrain.Add(new Transform() { Translation = new Vector3(0, 0, 0) });
             terrain.Add(terr);
-            terrain.Add(
-                Physics.CreateRidgedBody(
-                    0f,
-                    Matrix4.Identity, Physics.AddStaticMeshShape(terr.Mesh, terrain.Get<Transform>().Matrix)));
+            terrain.Add(Physics.CreateRidgedBody(0f, Matrix4.Identity, Physics.AddStaticMeshShape(terr.Mesh, Matrix4.Identity)));
             terrain.Add(new Selectable());
             terrain.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, -2, 0));
 
             var cube = Ecs.It.Create();
             cube.Tag = "cube";
-            cube.Add(new Transform() { Translation = new Vector3(0.0f, 0.0f, -2.0f), Scale = new Vector3(0.2f, 0.2f, 0.2f) });
             cube.Add(cubem);
             cube.Add(Physics.CreateRidgedBody(10, Matrix4.Identity, Physics.AddBoxShape(new BulletSharp.Math.Vector3(1, 1, 1))));
-            cube.Add(new Selectable()); 
+            cube.Add(new Selectable());
             cube.Get<RigidBody>().Translate(new BulletSharp.Math.Vector3(0, 20, 0));
 
             framebuffer = Art.It.CreateFbo(Resolution.W, Resolution.H, "main");
+
+            cubemap.Load(
+                "Resources/Textures/skybox/right.png",
+                "Resources/Textures/skybox/left.png",
+                "Resources/Textures/skybox/top.png",
+                "Resources/Textures/skybox/bottom.png",
+                "Resources/Textures/skybox/front.png",
+                "Resources/Textures/skybox/back.png");
         }
 
         public void Tick(double delta)
@@ -135,17 +132,21 @@ namespace HellHeimRPG
 
         public void Render()
         {
-            framebuffer.Bind(() =>
+            var fbo = Art.It.GetFbo("selection");
+
+            fbo.Bind(() =>
             {
                 GL.Enable(EnableCap.DepthTest);
                 GL.ClearColor(0, 0, 0, 1);
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
                 GL.Viewport(0, 0, Game.Resolution.W, Game.Resolution.H);
 
-                Ecs.It.Render(); 
+                Art.It.RenderSkyBox(cubemap, Art.It.Projection, Game.Camera.ViewMatrixStatic);
+
+                Ecs.It.Render();
             });
 
-            Art.It.RenderToScreen(framebuffer);
+            Art.It.RenderToScreen(fbo);
         }
     }
 }

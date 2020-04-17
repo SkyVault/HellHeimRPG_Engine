@@ -1,15 +1,12 @@
 ﻿namespace Functional
 
-type Actor = 
-    {  state : int
-    }
+type Actor =
+    { state: int }
 
-type ActorStats = 
-    { health : int
-    ; attack : float
-    ; armor  : float
-    }
+type ActorStats =
+    { health: int
+      attack: float
+      armor: float }
 
 module Test =
-    let greetFromFS name = 
-        name |> printfn "Hello %s from f#!"
+    let greetFromFS name = name |> printfn "Hello %s from f#!"
