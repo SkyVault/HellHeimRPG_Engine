@@ -1,13 +1,13 @@
-﻿
-(defn create-gamestate [] 
+﻿(defn create-gamestate [] 
 	{ :running #t })
 
 (defn run []
+	(def game (create-gamestate))
+	
+	(while (d/get game :running)
+		(def input (io/read-key))
+		(io/writeln input)
+		(if (eq? input "q")
+			(d/set game :running #f))))
 
-	)
-
-"Hello"
-
-(io/writeln (create-gamestate)) 
-
-(io/writeln :hello :world)
+(run)

@@ -9,13 +9,15 @@ using BulletSharp.Math;
 using HellHeimRPG.Components;
 using Vector3 = BulletSharp.Math.Vector3;
 
-namespace HellHeimRPG {
-    class Physics { 
+namespace HellHeimRPG
+{
+    class Physics
+    {
         public Vector3 Gravity { get; set; } = new Vector3(0, -10, 0);
         public DiscreteDynamicsWorld World { get; protected set; }
 
         private CollisionDispatcher collisionDispatcher;
-        private DbvtBroadphase broadphase; 
+        private DbvtBroadphase broadphase;
         private List<CollisionShape> collisionShapes = new List<CollisionShape>();
         private CollisionConfiguration collisionConfiguration;
 
@@ -26,26 +28,30 @@ namespace HellHeimRPG {
 
             broadphase = new DbvtBroadphase();
 
-            World = new DiscreteDynamicsWorld(collisionDispatcher, broadphase, null, collisionConfiguration); 
+            World = new DiscreteDynamicsWorld(collisionDispatcher, broadphase, null, collisionConfiguration);
             World.Gravity = Gravity;
 
             //// Test ground
             //var ground = CreateRidgedBody(0, Matrix4.Identity, AddBoxShape(new Vector3(100, 1, 100)));
         }
 
-        public BulletSharp.Math.Vector3 Convert(OpenTK.Vector3 v) {
-            return new BulletSharp.Math.Vector3 {X = v.X, Y = v.Y, Z = v.Z};
+        public BulletSharp.Math.Vector3 Convert(OpenTK.Vector3 v)
+        {
+            return new BulletSharp.Math.Vector3 { X = v.X, Y = v.Y, Z = v.Z };
         }
 
-        public BulletSharp.Math.Vector4 Convert(OpenTK.Vector4 v) {
-            return new BulletSharp.Math.Vector4 {X = v.X, Y = v.Y, Z = v.Z, W = v.W};
+        public BulletSharp.Math.Vector4 Convert(OpenTK.Vector4 v)
+        {
+            return new BulletSharp.Math.Vector4 { X = v.X, Y = v.Y, Z = v.Z, W = v.W };
         }
 
-        public OpenTK.Vector4 Convert(BulletSharp.Math.Vector4 v) {
-            return new OpenTK.Vector4{X = v.X, Y = v.Y, Z = v.Z, W = v.W};
+        public OpenTK.Vector4 Convert(BulletSharp.Math.Vector4 v)
+        {
+            return new OpenTK.Vector4 { X = v.X, Y = v.Y, Z = v.Z, W = v.W };
         }
 
-        public OpenTK.Matrix4 Convert(BulletSharp.Math.Matrix m) {
+        public OpenTK.Matrix4 Convert(BulletSharp.Math.Matrix m)
+        {
             return new OpenTK.Matrix4()
             {
                 Column0 = Convert(m.Column1),
@@ -55,7 +61,8 @@ namespace HellHeimRPG {
             };
         }
 
-        public BulletSharp.Math.Matrix Convert(OpenTK.Matrix4 m) {
+        public BulletSharp.Math.Matrix Convert(OpenTK.Matrix4 m)
+        {
             return new BulletSharp.Math.Matrix
             {
                 Column1 = Convert(m.Column0),
@@ -76,7 +83,7 @@ namespace HellHeimRPG {
             if (isDynamic)
                 shape.CalculateLocalInertia(mass, out localInertia);
 
-            DefaultMotionState myMotionState = new DefaultMotionState(startTransform); 
+            DefaultMotionState myMotionState = new DefaultMotionState(startTransform);
 
             var rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, shape, localInertia);
             var body = new RigidBody(rbInfo);
@@ -95,31 +102,22 @@ namespace HellHeimRPG {
 
         public CollisionShape AddStaticMeshShape(Mesh mesh, Matrix4 transform)
         {
-            var trimesh = new TriangleMesh();
-            foreach (var (a, b, c) in mesh.Triangles()) {
-                trimesh.AddTriangle(Convert(a), Convert(b), Convert(c));
-            }
-
             List<float> _vs = mesh.Vertices.ToList();
             List<int> _is = new List<int>();
 
-            // @HACK, a hack that doesn't even work :/
-            for (int i = 0; i < _vs.Count; i+=3)
-            {
-                _vs[i + 1] -= 8;
-            }
-
-            foreach (var i in mesh.Indices) { _is.Add((int) i);}
+            foreach (var i in mesh.Indices) { _is.Add((int)i); }
 
             var arr = new TriangleIndexVertexArray(_is, _vs);
             var shape = new BvhTriangleMeshShape(arr, true);
-            collisionShapes.Add(shape); 
+
+            collisionShapes.Add(shape);
+
             return shape;
         }
 
         public void Update()
         {
-            World.StepSimulation(Game.Clock.Delta); 
+            World.StepSimulation(Game.Clock.Delta);
         }
     }
 }

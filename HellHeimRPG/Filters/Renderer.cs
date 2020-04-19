@@ -217,7 +217,7 @@ namespace HellHeimRPG.Filters
             selectionBuffer.Bind(() =>
             {
                 GL.Enable(EnableCap.DepthTest);
-                GL.ClearColor(0, 0, 0, 1);
+                GL.ClearColor(0, 0, 0, 0);
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
                 GL.Viewport(0, 0, Game.Resolution.W, Game.Resolution.H);
 

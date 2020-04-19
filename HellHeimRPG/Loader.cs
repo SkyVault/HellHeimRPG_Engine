@@ -26,7 +26,7 @@ namespace HellHeimRPG {
                 return new Mesh(new float[] { }, new float[] { }, new float[] { });
             }
 
-            Assimp.Mesh mesh = scene.Meshes[0];
+            var mesh = scene.Meshes[0];
 
             foreach (var face in mesh.Faces) {
                 foreach (int i in face.Indices) {
@@ -48,8 +48,8 @@ namespace HellHeimRPG {
             }
 
             return new Mesh(rvertices.ToArray(),
-                rnormals.ToArray(),
-                ruvs.ToArray()) { Indices = rindices.ToArray() };
+                            rnormals.ToArray(),
+                            ruvs.ToArray()) { Indices = rindices.ToArray() };
         }
     }
 }

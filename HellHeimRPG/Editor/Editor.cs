@@ -1,6 +1,7 @@
 ﻿using ImGuiNET;
 using OpenTK;
 using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -17,6 +18,8 @@ namespace HellHeimRPG.Editor
     class Editor
     {
         CommandWindow commandWindow = new CommandWindow();
+
+        Vector3 selColor = new Vector3();
 
         public void DoEditor()
         {
@@ -184,6 +187,33 @@ namespace HellHeimRPG.Editor
 
         private bool open = false;
 
+        public void DoSelection()
+        {
+            var sfbo = Art.It.GetFbo("selection");
+
+            if (Input.It.LeftClicked)
+            {
+                sfbo.Bind(() =>
+                {
+                    GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
+
+                    var (mx, my) = Input.It.MousePosition;
+
+                    var scale_w = (float)Game.Resolution.W / (float)Game.WindowSize.Item1;
+                    var scale_h = (float)Game.Resolution.H / (float)Game.WindowSize.Item2;
+
+                    var smx = (int)Math.Floor(mx * scale_w);
+                    var smy = (int)Math.Floor(my * scale_h);
+
+                    var color = new byte[4];
+                    GL.ReadPixels(smx, Game.Resolution.H - smy, 1, 1, PixelFormat.Rgb, PixelType.UnsignedByte, color);
+
+                    selColor = new Vector3(color[0] / 255f, color[1] / 255f, color[2] / 255f);
+                    Console.WriteLine($"{mx} {my} {smx} {smy} {scale_w} {scale_h}");
+                });
+            };
+        }
+
         public void Render()
         {
             if (Input.It.ToggleEditor)
@@ -191,12 +221,15 @@ namespace HellHeimRPG.Editor
 
             if (!open) return;
 
+            DoSelection();
+
             ImGui.ShowDemoWindow();
 
             commandWindow.Do();
 
             if (ImGui.Begin("Editor"))
             {
+                ImGui.ColorButton("SELECTION COLOR", new System.Numerics.Vector4(selColor.X, selColor.Y, selColor.Z, 1.0f));
                 if (ImGui.TreeNode("Frame buffers"))
                 {
                     foreach (var (name, fbo) in Art.It.Fbos())

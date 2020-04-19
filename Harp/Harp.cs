@@ -349,6 +349,10 @@ namespace Harp {
             Vars[Vars.Count - 1][key] = val;
         }
 
+        public void Set(string key, Val val) {
+            this[key] = val;
+        }
+
         public Val this[string key] {
             get {
                 for (int i = Vars.Count - 1; i >= 0; i--) {
@@ -392,8 +396,8 @@ namespace Harp {
             {
                 string prefix = "";
                 var completions = new string[] {
-                    "defn", "let", "def", "lambda", "#f", "#t", "io/write", "io/writeln", "io/readkey", "io/readline",
-                    "loop", "dotimes"
+                    "defn", "let", "def", "set", "lambda", "#f", "#t", "io/write", "io/writeln", "io/readkey", "io/readline",
+                    "loop", "dotimes", "while"
                 };
                 return new LineEditor.Completion(prefix, completions);
             };
@@ -584,6 +588,7 @@ namespace Harp {
                     }
 
                     if (a.Name == "dotimes") {
+                        env.Push();
                         if (args.Items.Count < 2) {
                             Console.WriteLine("dotimes requires at least 1 argument");
                         }
@@ -598,7 +603,29 @@ namespace Harp {
                         } else { 
                             Console.WriteLine("dotimes requires a number argument");
                         }
+                        env.Pop();
+                    }
 
+                    if (a.Name == "while") {
+                        env.Push();
+                        if (args.Items.Count == 1) { 
+                            Assert.Fail("While form requires an expression"); 
+                        }
+
+                        var expr = EvalObject(env, args.Items[0]);
+                        var progn = new Seq();
+                        for(int i = 1; i < args.Items.Count; i++)
+                            progn.Items.Add(args[i]);
+
+                        while ((expr is Bool b) && b.Flag)
+                        {
+                            EvalProgn(env, progn);
+                            expr = EvalObject(env, args.Items[0]);
+                        }
+
+                        env.Pop();
+
+                        return new None();
                     }
 
                     if (a.Name == "loop") {
@@ -643,6 +670,21 @@ namespace Harp {
                             }
                         } else {
                             Assert.Fail($"def expexts and atom but got {variable.GetType()}");
+                        }
+
+                        return variable;
+                    }
+
+                    if (a.Name == "set")
+                    {
+                        Assert.IsTrue(args.Items.Count > 0);
+
+                        var variable = args.Items[0];
+
+                        if (variable is Atom atom) 
+                            env.Set(atom.Name, EvalObject(env, args.Items[1]));
+                        else {
+                            Assert.Fail("Set form requires its first argument to be an atom");
                         }
 
                         return variable;
