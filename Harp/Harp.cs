@@ -168,7 +168,7 @@ namespace Harp {
                         }
 
                         if (ss == "") { return new Token(TokTypes.String, ""); }
-                        else return new Token(TokTypes.String, ss); 
+                        return new Token(TokTypes.String, ss); 
                     }
                 }
             }
@@ -273,16 +273,15 @@ namespace Harp {
         public bool Evaluated = false;
         public List<Val> Literal = new List<Val>();
 
-        private string getKey(Val val) {
+        private string getKey(Val val)
+        {
             Assert.IsTrue(val.IsValue);
 
-            if (val is Num num) {
-                return num.Value.ToString(CultureInfo.InvariantCulture); 
-            } else if (val is Str str) {
-                return str.Value;
-            }
-
-            return "";
+            return val switch {
+                Num num => num.Value.ToString(CultureInfo.InvariantCulture),
+                Str str => str.Value,
+                _ => ""
+            };
         }
 
         public Val this[Val key] {
@@ -670,7 +669,7 @@ namespace Harp {
 
                     if (a.Name == "defn") {
                         //TODO(Dustin): Handle functions without a body
-                        Assert.IsTrue(args.Items.Count >= 3);
+                        Assert.IsTrue(args.Items.Count >= 2);
                         var name = args.Items[0] as Atom;
 
                         if (!(args.Items[1] is Vec)) {
@@ -788,7 +787,7 @@ class Program
 
         //Harp.Harp.StartRepl();
 
-        string code = File.ReadAllText("test.harp");
+        string code = File.ReadAllText("programs/rpg/main.harp");
         var h = new Harp.Harp();
         var e = new Harp.Env();
         h.LoadHarpLibInto(e);

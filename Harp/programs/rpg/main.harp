@@ -1,0 +1,9 @@
+﻿
+(defn create-gamestate [] 
+	{ :running #t })
+
+(defn run []
+
+	)
+
+(io/writeln (create-gamestate)) 

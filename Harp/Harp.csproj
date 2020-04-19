@@ -6,8 +6,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="bin\Debug\netcoreapp3.1\rpg.harp" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Mono.Terminal" Version="5.4.0" />
     <PackageReference Include="MSTest.TestFramework" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="programs\rpg\main.harp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
