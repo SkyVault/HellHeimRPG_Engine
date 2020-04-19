@@ -168,6 +168,8 @@ namespace Harp {
                         }
 
                         if (ss == "") { return new Token(TokTypes.String, ""); }
+                        // TODO(Dustin): Strip the quotes here
+                        if (ss.StartsWith('\"') && ss.EndsWith('\"')) ss = ss.Substring(1, ss.Length-2);
                         return new Token(TokTypes.String, ss); 
                     }
                 }
@@ -183,7 +185,13 @@ namespace Harp {
                         start.Next();
                     }
 
-                    return lexeme == "" ? _getNext() : new Token(TokTypes.Atom, lexeme);
+                    if (lexeme == "") return _getNext();
+
+                    if (lexeme.StartsWith(':')) {
+                        return new Token(TokTypes.String, lexeme);
+                    }
+
+                    return new Token(TokTypes.Atom, lexeme);
                 }
 
                 _it.Next();
@@ -410,7 +418,7 @@ namespace Harp {
             }
 
             if (token.Type == TokTypes.String) {
-                return new Str { Value = token.Lexeme.Substring(1, token.Lexeme.Length - 2) };
+                return new Str { Value = token.Lexeme };
             }
 
             if (token.Type == TokTypes.Bool) {

@@ -6,4 +6,8 @@
 
 	)
 
+"Hello"
+
 (io/writeln (create-gamestate)) 
+
+(io/writeln :hello :world)
