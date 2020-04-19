@@ -1,9 +1,19 @@
 ﻿(defn create-gamestate [] 
-	{ :running #t })
+	{ :running #t
+	  :entities [] }) 
 
+(enum Ents player zombie kobold)
+
+(defn create-ent [type x y]
+	{ :type type 
+	  :x x
+	  :y y })
+
+(io/writeln (create-ent Ents/player 2 2))
+	  
 (defn run []
 	(def game (create-gamestate))
-	
+
 	(while (d/get game :running)
 		(def input (io/read-key))
 		(io/writeln input)

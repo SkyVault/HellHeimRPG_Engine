@@ -178,6 +178,23 @@ namespace Harp {
                 }
             };
 
+            // TODO(Dustin): Can easily be a macro
+            env.Vars[0]["enum"] = new NativeFunc()
+            {
+                Func = (args) => {
+                    if (args[0] is Atom name) {
+                        for(int i = 1; i < args.Items.Count; i++) {
+                            if (args[i] is Atom sub)
+                                env.Vars[0][$"{name.Name}/{sub.Name}"] = new Num() {Value = i - 1};
+                            else Assert.Fail("");
+                        }
+                    }
+                    else Assert.Fail("");
+
+                    return new None();
+                }
+            };
+
             env.Vars[0]["d/get"] = new NativeFunc() {
                 Func = (args) => {
                     if (args.Items.Count != 2) {

@@ -833,8 +833,7 @@ namespace Harp {
 class Program
 {
     static void Main(string[] args)
-    {
-
+    { 
         //Harp.Harp.StartRepl();
 
         string code = File.ReadAllText("programs/rpg/main.harp");
